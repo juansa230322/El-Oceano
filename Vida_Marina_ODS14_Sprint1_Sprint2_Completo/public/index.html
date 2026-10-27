@@ -61,7 +61,7 @@
       overflow-x: hidden;
     }
     .ocean-glass {
-      background: rgba(11, 37, 69, 0.85);
+      background: rgba(11, 37, 69, 0.88);
       backdrop-filter: blur(14px);
       -webkit-backdrop-filter: blur(14px);
       border: 1px solid rgba(0, 180, 216, 0.25);
@@ -89,7 +89,6 @@
     .animate-float {
       animation: floatSlow 4s ease-in-out infinite;
     }
-    /* Estilos personalizados para barra de desplazamiento */
     ::-webkit-scrollbar {
       width: 6px;
       height: 6px;
@@ -111,17 +110,37 @@
 
   <div id="root"></div>
 
-  <!-- CÓDIGO DE LA APLICACIÓN REACT (POO + SUPABASE SPRINT 1 Y SPRINT 2) -->
+  <!-- CÓDIGO REACT + POO + SUPABASE -->
   <script type="text/babel">
     const { useState, useEffect, useMemo, useRef } = React;
 
-    // Configuración y Fallback de Assets
+    // Assets y Fallbacks
     const APP_ASSETS = window.APP_ASSETS || {
       logo: 'images/logo.jpg',
       reef1: 'images/reef1.png',
       reef2: 'images/reef2.png',
       reef3: 'images/reef3.png'
     };
+
+    // Catálogo de Avatares Emojis de la Vida Marina
+    const MARINE_AVATARS = [
+      { emoji: '🐢', name: 'Tortuga Marina' },
+      { emoji: '🐬', name: 'Delfín' },
+      { emoji: '🐋', name: 'Ballena Azul' },
+      { emoji: '🦈', name: 'Tiburón' },
+      { emoji: '🪸', name: 'Coral Cerebro' },
+      { emoji: '🐙', name: 'Pulpo' },
+      { emoji: '🐠', name: 'Pez Cirujano' },
+      { emoji: '🐡', name: 'Pez Globo' },
+      { emoji: '🦀', name: 'Cangrejo' },
+      { emoji: '🦞', name: 'Langosta' },
+      { emoji: '🦑', name: 'Calamar' },
+      { emoji: '🦭', name: 'Foca Marina' },
+      { emoji: '🪼', name: 'Medusa' },
+      { emoji: '🐚', name: 'Caracola' },
+      { emoji: '🌊', name: 'Ola Marina' },
+      { emoji: '🧜‍♀️', name: 'Sirena Guardiana' }
+    ];
 
     const MONTH_NAMES = [
       'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
@@ -137,6 +156,25 @@
       'Censo de biodiversidad marina'
     ];
 
+    // Helper para renderizar Avatar (Emoji Marino o Imagen)
+    function UserAvatar({ avatar, size = "w-10 h-10", textSize = "text-xl", className = "" }) {
+      const isEmoji = !avatar || (!avatar.startsWith('http') && !avatar.startsWith('data:'));
+      if (isEmoji) {
+        return (
+          <div className={`${size} rounded-2xl bg-gradient-to-tr from-cyan-400 via-teal-400 to-blue-600 flex items-center justify-center shadow-md shadow-cyan-500/20 ring-2 ring-cyan-400/40 select-none flex-shrink-0 ${className}`}>
+            <span className={textSize}>{avatar || '🐢'}</span>
+          </div>
+        );
+      }
+      return (
+        <img
+          src={avatar}
+          alt="Avatar"
+          className={`${size} rounded-2xl object-cover ring-2 ring-cyan-400/40 flex-shrink-0 ${className}`}
+        />
+      );
+    }
+
     // ================================================================
     // ARQUITECTURA POO: CLASES DE DOMINIO (SPRINT 1 + SPRINT 2)
     // ================================================================
@@ -150,7 +188,7 @@
         this.role = data.role || 'ciudadano'; // 'administrador' | 'experto' | 'voluntario' | 'ciudadano'
         this.status = data.status || 'activo'; // 'activo' | 'suspendido'
         this.location = data.location || 'Santa Marta, Colombia';
-        this.avatar = data.avatar || `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(this.name)}`;
+        this.avatar = data.avatar || '🐢'; // Por defecto emoji marino
         this.xp = Number(data.xp || 50);
         this.level = Number(data.level || Math.floor(this.xp / 100) + 1);
         this.earnedBadgeIds = Array.isArray(data.earnedBadgeIds) ? [...data.earnedBadgeIds] : [];
@@ -164,6 +202,22 @@
 
       canCreateActivity() {
         return this.role === 'administrador';
+      }
+
+      canEditAnyActivity() {
+        return this.role === 'administrador';
+      }
+
+      canDeleteAnyActivity() {
+        return this.role === 'administrador';
+      }
+
+      canEditPost(post) {
+        return this.role === 'administrador' || this.name === post.author;
+      }
+
+      canDeletePost(post) {
+        return this.role === 'administrador' || this.name === post.author;
       }
 
       canPublishScience() {
@@ -320,6 +374,10 @@
 
       canModerate() { return true; }
       canCreateActivity() { return true; }
+      canEditAnyActivity() { return true; }
+      canDeleteAnyActivity() { return true; }
+      canEditPost() { return true; }
+      canDeletePost() { return true; }
     }
 
     class Activity {
@@ -405,7 +463,7 @@
       constructor(data = {}) {
         this.id = data.id || ('c-' + Date.now() + '-' + Math.random().toString(36).substr(2, 4));
         this.author = data.author || 'Usuario Anónimo';
-        this.avatar = data.avatar || 'https://api.dicebear.com/7.x/bottts/svg?seed=Anon';
+        this.avatar = data.avatar || '🐟';
         this.role = data.role || 'voluntario';
         this.content = data.content || '';
         this.createdAt = data.createdAt || 'Hace un momento';
@@ -416,7 +474,7 @@
       constructor(data = {}) {
         this.id = data.id || ('post-' + Date.now());
         this.author = data.author || 'Usuario';
-        this.avatar = data.avatar || 'https://api.dicebear.com/7.x/bottts/svg?seed=Author';
+        this.avatar = data.avatar || '🐢';
         this.role = data.role || 'voluntario';
         this.category = data.category || 'Conservación';
         this.title = data.title || 'Publicación en el Foro';
@@ -574,10 +632,7 @@
       }
     }
 
-    // ================================================================
-    // SINCRONIZACIÓN EN TIEMPO REAL CON SUPABASE (NUBE MULTIDISPOSITIVO)
-    // ================================================================
-
+    // Sincronización en la nube con Supabase
     const VidaMarinaCloud = {
       isConfigured: Boolean(supabase),
 
@@ -589,13 +644,9 @@
             .select('posts')
             .eq('id', 1)
             .maybeSingle();
-          if (error) {
-            console.warn('[Supabase Cloud] Error al cargar foro:', error.message);
-            return null;
-          }
+          if (error) return null;
           return data && Array.isArray(data.posts) ? data.posts : null;
         } catch (e) {
-          console.warn('[Supabase Cloud] Fallo de red:', e);
           return null;
         }
       },
@@ -606,9 +657,7 @@
           await supabase
             .from('vida_marina_forum')
             .upsert({ id: 1, posts, updated_at: new Date().toISOString() }, { onConflict: 'id' });
-        } catch (e) {
-          console.warn('[Supabase Cloud] Error al guardar foro:', e);
-        }
+        } catch (e) {}
       },
 
       async loadUsers() {
@@ -666,7 +715,7 @@
     };
 
     // ================================================================
-    // SEMILLERO DE DATOS INICIALES (SPRINT 1 + SPRINT 2)
+    // SEMILLERO DE DATOS INICIALES CON EMOJIS MARINOS
     // ================================================================
 
     const seedBadgesData = [
@@ -689,7 +738,7 @@
         role: 'administrador',
         status: 'activo',
         location: 'Bogotá D.C., Colombia',
-        avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=AdminGeneral',
+        avatar: '🧜‍♀️',
         xp: 450,
         level: 5,
         earnedBadgeIds: ['badge-1', 'badge-2', 'badge-7']
@@ -707,7 +756,7 @@
         professionalCredentials: 'PhD en Ciencias del Mar, Reg. INVEMAR #4821',
         scientificBio: 'Investigadora marina con más de 12 años liderando programas de reproducción asistida de corales y áreas marinas protegidas en el Caribe.',
         researchAreas: ['Restauración de corales', 'Acidificación oceánica', 'Áreas marinas protegidas'],
-        avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=MarinaRios',
+        avatar: '🪸',
         xp: 320,
         level: 4,
         earnedBadgeIds: ['badge-1', 'badge-7'],
@@ -734,7 +783,7 @@
         professionalCredentials: 'MSc en Ecología Acuática, Reg. Col. #9302',
         scientificBio: 'Especialista en flujos de carbono azul y reforestación de manglares rojos y negros.',
         researchAreas: ['Manglares', 'Carbono azul'],
-        avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=CarlosOrtiz',
+        avatar: '🦀',
         xp: 210,
         level: 3,
         earnedBadgeIds: ['badge-1']
@@ -748,7 +797,7 @@
         status: 'activo',
         location: 'Cartagena, Colombia',
         interests: ['Limpieza de playas y fondos marinos', 'Restauración y siembra de corales', 'Monitoreo y rescate de tortugas marinas'],
-        avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=JuanitaVoluntaria',
+        avatar: '🐢',
         xp: 280,
         level: 3,
         earnedBadgeIds: ['badge-1', 'badge-2', 'badge-4'],
@@ -766,7 +815,7 @@
         status: 'activo',
         location: 'Barranquilla, Colombia',
         interests: ['Educación y sensibilización comunitaria'],
-        avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=PedroNuevo',
+        avatar: '🐠',
         xp: 0,
         level: 1,
         earnedBadgeIds: [],
@@ -781,7 +830,7 @@
         status: 'activo',
         location: 'San Andrés Islas, Colombia',
         interests: ['Restauración y siembra de corales', 'Protección y reforestación de manglares'],
-        avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=SofiaMeta',
+        avatar: '🐬',
         xp: 120,
         level: 2,
         earnedBadgeIds: ['badge-1'],
@@ -797,7 +846,7 @@
         role: 'ciudadano',
         status: 'activo',
         location: 'Cartagena, Colombia',
-        avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=AndresCiudadano',
+        avatar: '🌊',
         xp: 80,
         level: 1,
         earnedBadgeIds: ['badge-7']
@@ -896,7 +945,7 @@
       {
         id: 'post-1',
         author: 'Dra. Marina Ríos',
-        avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=MarinaRios',
+        avatar: '🪸',
         role: 'experto',
         category: 'Investigación Científica',
         title: 'Estrategias de Adaptación Térmica en Comunidades Arrecifales del Caribe',
@@ -908,7 +957,7 @@
           {
             id: 'c-101',
             author: 'Dr. Carlos Ortiz',
-            avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=CarlosOrtiz',
+            avatar: '🦀',
             role: 'experto',
             content: 'Excelente protocolo, Dra. Marina. En el Pacífico estamos analizando si la simbiosis con clade D aporta mayor tolerancia en zonas estuarinas.',
             createdAt: '2026-10-25T09:15:00Z'
@@ -916,7 +965,7 @@
           {
             id: 'c-102',
             author: 'Juanita Voluntaria',
-            avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=JuanitaVoluntaria',
+            avatar: '🐢',
             role: 'voluntario',
             content: '¡Maravilloso! Esperamos con ansias la siguiente jornada de siembra para ayudar a colocar las estructuras en el arrecife.',
             createdAt: '2026-10-25T11:40:00Z'
@@ -926,7 +975,7 @@
       {
         id: 'post-2',
         author: 'Juanita Voluntaria',
-        avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=JuanitaVoluntaria',
+        avatar: '🐢',
         role: 'voluntario',
         category: 'Limpieza',
         title: 'Resultados de la Caracterización en Playa Blanca: ¡Recolectamos 320 kg!',
@@ -938,7 +987,7 @@
           {
             id: 'c-201',
             author: 'Andrés Ciudadano',
-            avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=AndresCiudadano',
+            avatar: '🌊',
             role: 'ciudadano',
             content: 'Un gran impacto para nuestra comunidad local. Gracias por cuidar nuestras playas.',
             createdAt: '2026-10-22T18:20:00Z'
@@ -954,18 +1003,18 @@
     function App() {
       const db = useMemo(() => DatabaseService.getInstance(), []);
 
-      // Estado de datos principales
+      // Estados de datos principales
       const [users, setUsers] = useState(() => db.loadUsers(seedUsersData));
-      // Inicia en modo visitante (null) - Sin usuario pre-logueado (Requerimiento explícito)
+      // Inicia en modo visitante (null) - Sin usuario pre-logueado
       const [currentUserId, setCurrentUserId] = useState(() => db.loadCurrentUserId(null));
       const [activities, setActivities] = useState(() => db.loadActivities(seedActivitiesData));
       const [badges, setBadges] = useState(() => db.loadBadges(seedBadgesData));
       const [forumPosts, setForumPosts] = useState(() => db.loadForum(seedForumData));
 
       // Vista activa
-      const [currentView, setCurrentView] = useState('home'); // 'home'|'calendar'|'forum'|'badges'|'citizen'|'profile'|'admin'
+      const [currentView, setCurrentView] = useState('home');
 
-      // Toast Notifications
+      // Notificaciones Toast
       const [toasts, setToasts] = useState([]);
       const showToast = (message, type = 'success') => {
         const id = Date.now() + Math.random();
@@ -988,18 +1037,17 @@
             return;
           }
 
-          // Cargar foro desde Supabase
+          // Foro
           const remotePosts = await VidaMarinaCloud.loadForum();
           if (!isCancelled && Array.isArray(remotePosts) && remotePosts.length > 0) {
             cloudSyncRef.current.applying = true;
             setForumPosts(remotePosts.map(p => db.hydratePost(p)));
             setTimeout(() => { cloudSyncRef.current.applying = false; }, 50);
           } else if (!isCancelled) {
-            // Guardar foro inicial
             await VidaMarinaCloud.saveForum(forumPosts);
           }
 
-          // Cargar usuarios desde Supabase
+          // Usuarios
           const remoteUsers = await VidaMarinaCloud.loadUsers();
           if (!isCancelled && Array.isArray(remoteUsers) && remoteUsers.length > 0) {
             cloudSyncRef.current.applying = true;
@@ -1036,7 +1084,7 @@
         };
       }, [db]);
 
-      // Persistencia local y en Supabase al haber cambios
+      // Guardar cambios locales y en Supabase
       useEffect(() => {
         db.saveUsers(users);
         db.saveCurrentUserId(currentUserId);
@@ -1050,7 +1098,7 @@
         }
       }, [users, currentUserId, activities, badges, forumPosts, db]);
 
-      // Usuario autenticado activo (Polimorfismo POO)
+      // Usuario autenticado activo (POO)
       const currentUser = useMemo(() => {
         if (!currentUserId) return null;
         return users.find(u => u.id === currentUserId) || null;
@@ -1065,29 +1113,34 @@
       // Auth Modal
       const [authModalOpen, setAuthModalOpen] = useState(false);
       const [authTab, setAuthTab] = useState('login'); // 'login' | 'register'
-      const [regRole, setRegRole] = useState('voluntario'); // 'experto' | 'voluntario' | 'ciudadano'
+      const [regRole, setRegRole] = useState('voluntario');
+      const [regAvatar, setRegAvatar] = useState('🐢'); // Emoji Marino por defecto
       const [loginEmail, setLoginEmail] = useState('');
       const [loginPassword, setLoginPassword] = useState('');
       const [regName, setRegName] = useState('');
       const [regEmail, setRegEmail] = useState('');
       const [regPassword, setRegPassword] = useState('');
       const [regLocation, setRegLocation] = useState('Santa Marta, Colombia');
-      // Experto
       const [regInstitution, setRegInstitution] = useState('');
       const [regSpecialty, setRegSpecialty] = useState('');
       const [regCredentials, setRegCredentials] = useState('');
-      // Voluntario
       const [regInterests, setRegInterests] = useState(['Limpieza de playas y fondos marinos']);
       const [authError, setAuthError] = useState('');
 
+      // Modal para cambiar avatar en Perfil
+      const [changeAvatarModalOpen, setChangeAvatarModalOpen] = useState(false);
+
       // Calendario
       const [selectedYear, setSelectedYear] = useState(2026);
-      const [selectedMonth, setSelectedMonth] = useState(10); // 10 = Noviembre (0-indexed)
+      const [selectedMonth, setSelectedMonth] = useState(10); // Noviembre (0-indexed)
       const [calendarFilter, setCalendarFilter] = useState('Todos');
       const [quickFilter, setQuickFilter] = useState(null);
       const [selectedActivityModal, setSelectedActivityModal] = useState(null);
+      
+      // Admin: Crear y Editar Actividad
       const [createActivityModalOpen, setCreateActivityModalOpen] = useState(false);
-      const [newActForm, setNewActForm] = useState({
+      const [editingActivity, setEditingActivity] = useState(null); // null o actividad a editar
+      const [actForm, setActForm] = useState({
         title: '',
         description: '',
         date: '2026-11-20',
@@ -1098,7 +1151,7 @@
       });
 
       // Insignias
-      const [badgeFilter, setBadgeFilter] = useState('all'); // 'all' | 'unlocked' | 'locked'
+      const [badgeFilter, setBadgeFilter] = useState('all');
       const [unlockedBadgeCelebration, setUnlockedBadgeCelebration] = useState(null);
       const [grantBadgeModalOpen, setGrantBadgeModalOpen] = useState(false);
       const [grantVolunteerId, setGrantVolunteerId] = useState('');
@@ -1108,9 +1161,10 @@
       const [forumCategory, setForumCategory] = useState('Todas');
       const [forumSearch, setForumSearch] = useState('');
       const [newPostModalOpen, setNewPostModalOpen] = useState(false);
-      const [newPostTitle, setNewPostTitle] = useState('');
-      const [newPostCategory, setNewPostCategory] = useState('Conservación');
-      const [newPostContent, setNewPostContent] = useState('');
+      const [editingPost, setEditingPost] = useState(null); // null o post a editar por admin/autor
+      const [postFormTitle, setPostFormTitle] = useState('');
+      const [postFormCategory, setPostFormCategory] = useState('Conservación');
+      const [postFormContent, setPostFormContent] = useState('');
       const [replyInputs, setReplyInputs] = useState({});
 
       // Perfil Experto
@@ -1129,6 +1183,12 @@
       const [adminRoleFilter, setAdminRoleFilter] = useState('Todos');
       const [changeRoleModalUser, setChangeRoleModalUser] = useState(null);
       const [newRoleSelect, setNewRoleSelect] = useState('voluntario');
+      
+      // Admin: Restablecer Contraseña de Usuario
+      const [resetPasswordUser, setResetPasswordUser] = useState(null);
+      const [resetNewPassword, setResetNewPassword] = useState('');
+      const [resetConfirmPassword, setResetConfirmPassword] = useState('');
+      const [resetPasswordError, setResetPasswordError] = useState('');
 
       // Ciudadano
       const [reportModalOpen, setReportModalOpen] = useState(false);
@@ -1156,9 +1216,9 @@
         } catch (e) {}
       };
 
-      // Validar fecha real de calendario (Requisito CP-HU-P-01-03)
+      // Validar fecha real de calendario (CP-HU-P-01-03)
       const isValidDate = (dateString) => {
-        if (!/^d{4}-d{2}-d{2}$/.test(dateString)) return false;
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(dateString)) return false;
         const [y, m, d] = dateString.split('-').map(Number);
         if (m < 1 || m > 12 || d < 1 || d > 31) return false;
         const date = new Date(y, m - 1, d);
@@ -1195,15 +1255,15 @@
         setAuthModalOpen(false);
         setLoginEmail('');
         setLoginPassword('');
-        showToast(`¡Bienvenido(a) de nuevo, ${found.name}! (${found.getRoleTitle()})`);
+        showToast(`¡Bienvenida(o) de nuevo, ${found.name}! (${found.getRoleTitle()})`);
       };
 
-      // Registro de Usuarios por Rol (RF01: HU-001-1, HU-001-2, HU-001-3)
+      // Registro de Usuarios con Selector de Avatar Marino (RF01)
       const handleRegisterSubmit = (e) => {
         e.preventDefault();
         setAuthError('');
 
-        const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+.[a-zA-Z]{2,}$/;
+        const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
         const email = regEmail.trim();
 
         if (!regName.trim()) {
@@ -1239,6 +1299,7 @@
             email,
             password: regPassword,
             location: regLocation.trim(),
+            avatar: regAvatar,
             institution: regInstitution.trim(),
             biologicalSpecialty: regSpecialty.trim(),
             professionalCredentials: regCredentials.trim()
@@ -1253,6 +1314,7 @@
             email,
             password: regPassword,
             location: regLocation.trim(),
+            avatar: regAvatar,
             interests: [...regInterests]
           });
         } else if (regRole === 'ciudadano') {
@@ -1260,6 +1322,7 @@
             name: regName.trim(),
             email,
             password: regPassword,
+            avatar: regAvatar,
             location: regLocation.trim()
           });
         } else {
@@ -1272,13 +1335,13 @@
         setCurrentUserId(newUserInstance.id);
         setAuthModalOpen(false);
 
-        // Reset
         setRegName('');
         setRegEmail('');
         setRegPassword('');
         setRegInstitution('');
         setRegSpecialty('');
         setRegCredentials('');
+        setRegAvatar('🐢');
         setRegInterests(['Limpieza de playas y fondos marinos']);
 
         showToast(`¡Registro exitoso! Cuenta creada como ${newUserInstance.getRoleTitle()}.`);
@@ -1288,6 +1351,15 @@
         setCurrentUserId(null);
         setCurrentView('home');
         showToast('Sesión cerrada correctamente. Ahora estás en modo visitante.');
+      };
+
+      // Cambiar Emoji Marino desde el Perfil
+      const handleSelectProfileAvatar = (emoji) => {
+        if (!currentUser) return;
+        currentUser.avatar = emoji;
+        setUsers([...users]);
+        setChangeAvatarModalOpen(false);
+        showToast(`¡Foto de perfil actualizada a ${emoji} con éxito!`);
       };
 
       // Calendario: Navegación de meses para 2026 y 2027
@@ -1333,7 +1405,6 @@
         if (enrolled) {
           currentUser.enrollInActivity(actId);
 
-          // Verificar si desbloqueó Planificador Activo (B08 - 3 actividades inscritas)
           let newlyUnlocked = null;
           if (currentUser.enrolledActivityIds.length >= 3 && !currentUser.hasBadge('badge-8')) {
             const b8 = badges.find(b => b.id === 'badge-8');
@@ -1371,18 +1442,48 @@
         }
       };
 
-      // Crear Actividad (Backlog HU-P-01 - Admin)
-      const handleCreateActivitySubmit = (e) => {
+      // Admin: Abrir Modal Crear Actividad
+      const handleOpenCreateActivity = () => {
+        setEditingActivity(null);
+        setActForm({
+          title: '',
+          description: '',
+          date: '2026-11-20',
+          time: '08:00 - 12:00',
+          location: 'Parque Nacional Natural Tayrona',
+          volunteer_spots: 30,
+          activity_type: 'Conservación'
+        });
+        setCreateActivityModalOpen(true);
+      };
+
+      // Admin: Abrir Modal Editar Actividad
+      const handleOpenEditActivity = (act) => {
+        setEditingActivity(act);
+        setActForm({
+          title: act.name,
+          description: act.description,
+          date: act.date,
+          time: act.time,
+          location: act.location,
+          volunteer_spots: act.totalSpots,
+          activity_type: act.type
+        });
+        setCreateActivityModalOpen(true);
+      };
+
+      // Admin: Guardar Creación / Edición de Actividad
+      const handleSaveActivitySubmit = (e) => {
         e.preventDefault();
         if (!isAdmin) {
-          showToast('Permiso insuficiente. Solo el Administrador General puede programar convocatorias.', 'error');
+          showToast('Permiso insuficiente. Solo la administradora puede gestionar actividades.', 'error');
           return;
         }
 
-        const { title, description, date, time, location, volunteer_spots, activity_type } = newActForm;
+        const { title, description, date, time, location, volunteer_spots, activity_type } = actForm;
 
         if (!title.trim() || !location.trim()) {
-          showToast('Faltan campos obligatorios para crear la actividad: título y lugar son requeridos.', 'error');
+          showToast('Faltan campos obligatorios para la actividad: título y lugar son requeridos.', 'error');
           return;
         }
 
@@ -1397,47 +1498,184 @@
           return;
         }
 
-        const newAct = new Activity({
-          title: title.trim(),
-          description: description.trim(),
-          date,
-          time: time.trim() || '08:00 - 12:00',
-          location: location.trim(),
-          volunteer_spots: spotsNum,
-          activity_type,
-          responsible: currentUser.name,
-          image: activity_type === 'Limpieza' ? APP_ASSETS.reef2 : APP_ASSETS.reef1,
-          isBacklog: true
-        });
+        if (editingActivity) {
+          // Edición
+          editingActivity.name = title.trim();
+          editingActivity.title = title.trim();
+          editingActivity.description = description.trim();
+          editingActivity.date = date;
+          editingActivity.time = time.trim() || '08:00 - 12:00';
+          editingActivity.location = location.trim();
+          editingActivity.totalSpots = spotsNum;
+          editingActivity.volunteer_spots = spotsNum;
+          editingActivity.type = activity_type;
 
-        setActivities([newAct, ...activities]);
+          setActivities([...activities]);
+          if (selectedActivityModal && selectedActivityModal.id === editingActivity.id) {
+            setSelectedActivityModal(new Activity(editingActivity));
+          }
+          showToast(`¡Actividad "${editingActivity.name}" actualizada con éxito!`);
+        } else {
+          // Creación (Backlog HU-P-01)
+          const newAct = new Activity({
+            title: title.trim(),
+            description: description.trim(),
+            date,
+            time: time.trim() || '08:00 - 12:00',
+            location: location.trim(),
+            volunteer_spots: spotsNum,
+            activity_type,
+            responsible: currentUser.name,
+            image: activity_type === 'Limpieza' ? APP_ASSETS.reef2 : APP_ASSETS.reef1,
+            isBacklog: true
+          });
+
+          setActivities([newAct, ...activities]);
+          const [actY, actM] = date.split('-').map(Number);
+          setSelectedYear(actY);
+          setSelectedMonth(actM - 1);
+          showToast(`¡Actividad "${newAct.title}" creada en la agenda de conservación!`);
+        }
+
         setCreateActivityModalOpen(false);
-        setNewActForm({
-          title: '',
-          description: '',
-          date: '2026-11-20',
-          time: '08:00 - 12:00',
-          location: 'Parque Nacional Natural Tayrona',
-          volunteer_spots: 30,
-          activity_type: 'Conservación'
-        });
-
-        // Mover calendario al mes de la actividad creada
-        const [actY, actM] = date.split('-').map(Number);
-        setSelectedYear(actY);
-        setSelectedMonth(actM - 1);
-
-        showToast(`¡Actividad "${newAct.title}" creada con éxito y agregada a la agenda 2026-2027!`);
       };
 
-      // Simular participación de Voluntario (RF02: CP-HU-002-2-05)
+      // Admin: Borrar Actividad
+      const handleDeleteActivity = (actId) => {
+        if (!isAdmin) return;
+        const act = activities.find(a => a.id === actId);
+        if (!act) return;
+        if (confirm(`¿Estás segura de eliminar definitivamente la actividad "${act.name}" del calendario?`)) {
+          setActivities(activities.filter(a => a.id !== actId));
+          if (selectedActivityModal && selectedActivityModal.id === actId) {
+            setSelectedActivityModal(null);
+          }
+          showToast(`Actividad "${act.name}" eliminada del calendario.`);
+        }
+      };
+
+      // Foro: Abrir Modal Crear Publicación
+      const handleOpenCreatePost = () => {
+        setEditingPost(null);
+        setPostFormTitle('');
+        setPostFormCategory('Conservación');
+        setPostFormContent('');
+        setNewPostModalOpen(true);
+      };
+
+      // Foro: Abrir Modal Editar Publicación (Admin o Autor)
+      const handleOpenEditPost = (post) => {
+        setEditingPost(post);
+        setPostFormTitle(post.title);
+        setPostFormCategory(post.category);
+        setPostFormContent(post.content);
+        setNewPostModalOpen(true);
+      };
+
+      // Foro: Guardar Creación / Edición de Publicación
+      const handleSavePostSubmit = (e) => {
+        e.preventDefault();
+        if (!currentUser) {
+          setAuthTab('login');
+          setAuthModalOpen(true);
+          return;
+        }
+
+        if (!postFormTitle.trim() || !postFormContent.trim()) {
+          showToast('Debes ingresar un título y contenido para la publicación.', 'error');
+          return;
+        }
+
+        if (editingPost) {
+          // Editar publicación existente
+          editingPost.title = postFormTitle.trim();
+          editingPost.category = postFormCategory;
+          editingPost.content = postFormContent.trim();
+          setForumPosts([...forumPosts]);
+          showToast('¡Publicación actualizada correctamente en el foro!');
+        } else {
+          // Crear nueva publicación
+          const post = new ForumPost({
+            author: currentUser.name,
+            avatar: currentUser.avatar,
+            role: currentUser.role,
+            category: postFormCategory,
+            title: postFormTitle.trim(),
+            content: postFormContent.trim()
+          });
+
+          currentUser.addXP(25);
+
+          let newlyUnlocked = null;
+          if (!currentUser.hasBadge('badge-7')) {
+            const b7 = badges.find(b => b.id === 'badge-7');
+            if (b7) {
+              b7.awardTo(currentUser);
+              newlyUnlocked = b7;
+            }
+          }
+
+          setForumPosts([post, ...forumPosts]);
+          setUsers([...users]);
+          showToast('¡Publicación compartida en el Foro de Vida Marina!');
+          if (newlyUnlocked) triggerConfetti(newlyUnlocked);
+        }
+
+        setNewPostModalOpen(false);
+      };
+
+      // Foro: Borrar Publicación (Admin o Autor)
+      const handleDeletePost = (postId) => {
+        const post = forumPosts.find(p => p.id === postId);
+        if (!post) return;
+        if (!currentUser || (!isAdmin && currentUser.name !== post.author)) {
+          showToast('No tienes permiso para eliminar esta publicación.', 'error');
+          return;
+        }
+        if (confirm(`¿Confirmas la eliminación definitiva de la publicación "${post.title}"?`)) {
+          setForumPosts(forumPosts.filter(p => p.id !== postId));
+          showToast('Publicación eliminada correctamente.');
+        }
+      };
+
+      // Foro: Like único
+      const handleToggleLike = (postId) => {
+        const post = forumPosts.find(p => p.id === postId);
+        if (!post) return;
+        const uid = currentUser ? currentUser.id : 'anon-device';
+        post.toggleLike(uid);
+        setForumPosts([...forumPosts]);
+      };
+
+      // Foro: Comentar
+      const handleAddReply = (postId) => {
+        const inputVal = replyInputs[postId] || '';
+        if (!inputVal.trim()) return;
+
+        const post = forumPosts.find(p => p.id === postId);
+        if (!post) return;
+
+        post.addComment({
+          author: currentUser ? currentUser.name : 'Ciudadano Colaborador',
+          avatar: currentUser ? currentUser.avatar : '🐚',
+          role: currentUser ? currentUser.role : 'ciudadano',
+          content: inputVal.trim()
+        });
+
+        if (currentUser) currentUser.addXP(15);
+
+        setReplyInputs({ ...replyInputs, [postId]: '' });
+        setForumPosts([...forumPosts]);
+        setUsers([...users]);
+      };
+
+      // Voluntario: Simular Participación (+2h)
       const handleSimulateParticipation = () => {
         if (!currentUser || currentUser.role !== 'voluntario') return;
 
-        const part = currentUser.addParticipation('Censo y Marcaje de Tortugas Marinas en Playa Los Cocos', 2);
+        currentUser.addParticipation('Censo y Marcaje de Tortugas Marinas en Playa Los Cocos', 2);
         const newTotalHours = currentUser.calculateTotalHours();
 
-        // Evaluar si alcanzó insignias por metas (B01: 1h, B02: 10h, B03: 20h)
         let newlyUnlocked = null;
         badges.forEach(b => {
           if (b.requiredHours > 0 && newTotalHours >= b.requiredHours && !currentUser.hasBadge(b.id)) {
@@ -1447,11 +1685,11 @@
         });
 
         setUsers([...users]);
-        showToast(`¡Jornada de voluntariado registrada (+2h)! Total de horas acumuladas: ${newTotalHours}h.`);
+        showToast(`¡Jornada de voluntariado registrada (+2h)! Total acumulado: ${newTotalHours}h.`);
         if (newlyUnlocked) triggerConfetti(newlyUnlocked);
       };
 
-      // Editar biografía de Experto (RF02: CP-HU-002-1-01)
+      // Experto: Biografía y Publicaciones
       const handleSaveBio = (e) => {
         e.preventDefault();
         if (!currentUser || (currentUser.role !== 'experto' && !isAdmin)) return;
@@ -1461,7 +1699,6 @@
         showToast('Biografía científica actualizada exitosamente.');
       };
 
-      // Agregar publicación de Experto (RF02: CP-HU-002-1-02)
       const handleAddPublication = (e) => {
         e.preventDefault();
         if (!currentUser || (currentUser.role !== 'experto' && !isAdmin)) return;
@@ -1493,7 +1730,6 @@
         }
       };
 
-      // Modificar áreas de investigación (RF02: CP-HU-002-1-03)
       const handleSaveAreas = (e) => {
         e.preventDefault();
         if (!currentUser || (currentUser.role !== 'experto' && !isAdmin)) return;
@@ -1504,90 +1740,7 @@
         showToast('Áreas de investigación actualizadas con éxito.');
       };
 
-      // Foro: Crear hilo
-      const handleCreatePostSubmit = (e) => {
-        e.preventDefault();
-        if (!currentUser) {
-          setAuthTab('login');
-          setAuthModalOpen(true);
-          return;
-        }
-        if (!newPostTitle.trim() || !newPostContent.trim()) {
-          showToast('Debes ingresar un título y contenido para el debate.', 'error');
-          return;
-        }
-
-        const post = new ForumPost({
-          author: currentUser.name,
-          avatar: currentUser.avatar,
-          role: currentUser.role,
-          category: newPostCategory,
-          title: newPostTitle.trim(),
-          content: newPostContent.trim()
-        });
-
-        currentUser.addXP(25);
-
-        // Desbloquear B07 (Voz Comunitaria) si aún no la tiene
-        let newlyUnlocked = null;
-        if (!currentUser.hasBadge('badge-7')) {
-          const b7 = badges.find(b => b.id === 'badge-7');
-          if (b7) {
-            b7.awardTo(currentUser);
-            newlyUnlocked = b7;
-          }
-        }
-
-        setForumPosts([post, ...forumPosts]);
-        setUsers([...users]);
-        setNewPostTitle('');
-        setNewPostContent('');
-        setNewPostModalOpen(false);
-
-        showToast('Publicación compartida en el Foro de Vida Marina.');
-        if (newlyUnlocked) triggerConfetti(newlyUnlocked);
-      };
-
-      // Foro: Like único
-      const handleToggleLike = (postId) => {
-        const post = forumPosts.find(p => p.id === postId);
-        if (!post) return;
-        const uid = currentUser ? currentUser.id : 'anon-device';
-        const liked = post.toggleLike(uid);
-        setForumPosts([...forumPosts]);
-      };
-
-      // Foro: Agregar comentario
-      const handleAddReply = (postId) => {
-        const inputVal = replyInputs[postId] || '';
-        if (!inputVal.trim()) return;
-
-        const post = forumPosts.find(p => p.id === postId);
-        if (!post) return;
-
-        post.addComment({
-          author: currentUser ? currentUser.name : 'Ciudadano Colaborador',
-          avatar: currentUser ? currentUser.avatar : 'https://api.dicebear.com/7.x/bottts/svg?seed=AnonUser',
-          role: currentUser ? currentUser.role : 'ciudadano',
-          content: inputVal.trim()
-        });
-
-        if (currentUser) currentUser.addXP(15);
-
-        setReplyInputs({ ...replyInputs, [postId]: '' });
-        setForumPosts([...forumPosts]);
-        setUsers([...users]);
-      };
-
-      const handleDeletePost = (postId) => {
-        if (!isAdmin) return;
-        if (confirm('¿Confirmas la moderación y eliminación definitiva de esta publicación?')) {
-          setForumPosts(forumPosts.filter(p => p.id !== postId));
-          showToast('Publicación eliminada por el Administrador General.');
-        }
-      };
-
-      // Panel Admin: Cambiar Rol (RF09: CP-HU-009-2-03)
+      // Admin: Cambiar Rol
       const handleOpenChangeRole = (u) => {
         setChangeRoleModalUser(u);
         setNewRoleSelect(u.role);
@@ -1604,7 +1757,7 @@
         setChangeRoleModalUser(null);
       };
 
-      // Panel Admin: Suspender / Reactivar (RF09: CP-HU-009-2-04)
+      // Admin: Suspender / Reactivar
       const handleToggleStatus = (u) => {
         const nextStatus = u.status === 'activo' ? 'suspendido' : 'activo';
         const actionWord = nextStatus === 'suspendido' ? 'suspender' : 'reactivar';
@@ -1615,35 +1768,70 @@
         }
       };
 
-      // Panel Admin: Eliminar Usuario (RF09: CP-HU-009-2-04)
+      // Admin: Eliminar Usuario
       const handleDeleteUser = (u) => {
-        if (confirm(`¿Estás seguro de eliminar definitivamente al usuario "${u.name}"? Esta acción borrará sus datos.`)) {
+        if (confirm(`¿Estás segura de eliminar definitivamente al usuario "${u.name}"? Esta acción borrará sus datos.`)) {
           setUsers(users.filter(x => x.id !== u.id));
           if (currentUserId === u.id) setCurrentUserId(null);
           showToast(`Usuario "${u.name}" eliminado del sistema.`);
         }
       };
 
-      // Panel Admin: Otorgar Insignia Manualmente
+      // Admin: Restablecer Contraseña de Usuario
+      const handleOpenResetPassword = (u) => {
+        setResetPasswordUser(u);
+        setResetNewPassword('');
+        setResetConfirmPassword('');
+        setResetPasswordError('');
+      };
+
+      const handleSaveResetPassword = (e) => {
+        e.preventDefault();
+        if (!resetPasswordUser) return;
+        if (resetNewPassword.length < 6) {
+          setResetPasswordError('La nueva contraseña debe tener mínimo 6 caracteres.');
+          return;
+        }
+        if (resetNewPassword !== resetConfirmPassword) {
+          setResetPasswordError('Las contraseñas no coinciden. Por favor verifica.');
+          return;
+        }
+
+        resetPasswordUser.password = resetNewPassword;
+        setUsers([...users]);
+        setResetPasswordUser(null);
+        showToast(`¡Contraseña restablecida correctamente para ${resetPasswordUser.name}! Ya puede iniciar sesión con su nueva clave.`);
+      };
+
+      // Admin: Otorgar Insignia Oficial
+      const handleOpenGrantBadge = (targetUser = null) => {
+        if (targetUser) {
+          setGrantVolunteerId(targetUser.id);
+        } else {
+          const firstVol = users.find(u => u.role === 'voluntario' || u.role === 'ciudadano');
+          if (firstVol) setGrantVolunteerId(firstVol.id);
+        }
+        setGrantBadgeModalOpen(true);
+      };
+
       const handleGrantBadgeSubmit = (e) => {
         e.preventDefault();
-        const vol = users.find(u => u.id === grantVolunteerId);
+        const target = users.find(u => u.id === grantVolunteerId);
         const b = badges.find(x => x.id === grantBadgeId);
-        if (vol && b) {
-          b.awardTo(vol);
+        if (target && b) {
+          b.awardTo(target);
           setUsers([...users]);
           setGrantBadgeModalOpen(false);
-          showToast(`Insignia "${b.name}" otorgada con éxito a ${vol.name}.`);
+          showToast(`Insignia "${b.name}" otorgada con éxito a ${target.name}.`);
         }
       };
 
       // ================================================================
-      // FILTROS Y CÁLCULOS DEL CALENDARIO MENSUAL
+      // FILTROS Y CÁLCULOS DEL CALENDARIO
       // ================================================================
 
       const monthPrefix = `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}`;
-
-      const firstDayOfWeek = new Date(selectedYear, selectedMonth, 1).getDay(); // 0 = Domingo
+      const firstDayOfWeek = new Date(selectedYear, selectedMonth, 1).getDay(); // 0 = Dom
       const daysInCurrentMonth = new Date(selectedYear, selectedMonth + 1, 0).getDate();
 
       const displayedActivities = useMemo(() => {
@@ -1685,7 +1873,7 @@
       return (
         <div className="flex flex-col min-h-screen">
           
-          {/* TOAST NOTIFICATIONS */}
+          {/* TOASTS */}
           <div className="fixed top-4 right-4 z-50 space-y-2 pointer-events-none">
             {toasts.map(t => (
               <div
@@ -1703,12 +1891,12 @@
           </div>
 
           {/* ============================================================== */}
-          {/* CABECERA Y NAVEGACIÓN SUPERIOR (ESCRITORIO & TABLETS) */}
+          {/* HEADER SUPERIOR (DESKTOP & TABLETS) */}
           {/* ============================================================== */}
           <header className="sticky top-0 z-40 ocean-glass border-b border-cyan-500/20 px-4 sm:px-6 py-3 transition-all">
             <div className="max-w-7xl mx-auto flex items-center justify-between gap-3">
               
-              {/* Logo y Nombre Oficial */}
+              {/* Logo y Nombre */}
               <div
                 onClick={() => setCurrentView('home')}
                 className="flex items-center gap-3 cursor-pointer group"
@@ -1735,7 +1923,7 @@
                 </div>
               </div>
 
-              {/* Menú de Navegación (Escritorio) */}
+              {/* Menú Superior */}
               <nav className="hidden md:flex items-center gap-1 sm:gap-2">
                 <button
                   onClick={() => setCurrentView('home')}
@@ -1803,7 +1991,7 @@
                 )}
               </nav>
 
-              {/* Acciones de Sesión (Visitante vs. Autenticado) */}
+              {/* Acciones de Sesión */}
               <div className="flex items-center gap-2">
                 {currentUser ? (
                   <div className="flex items-center gap-2">
@@ -1812,11 +2000,7 @@
                       className="flex items-center gap-2 px-3 py-1.5 rounded-2xl bg-[#0b2545] border border-cyan-500/30 hover:border-cyan-400 transition-all text-left"
                       title="Ver mi perfil"
                     >
-                      <img
-                        src={currentUser.avatar}
-                        alt={currentUser.name}
-                        className="w-7 h-7 rounded-xl object-cover ring-2 ring-cyan-400/40"
-                      />
+                      <UserAvatar avatar={currentUser.avatar} size="w-8 h-8" textSize="text-base" />
                       <div className="hidden sm:block">
                         <div className="text-xs font-bold text-white leading-none">
                           {currentUser.name.split(' ')[0]}
@@ -1865,7 +2049,6 @@
             {/* ---------------------------------------------------------- */}
             {currentView === 'home' && (
               <div className="space-y-10 sm:space-y-12 animate-in fade-in duration-300">
-                {/* Hero Banner Arrecife */}
                 <div className="relative rounded-[2.5rem] overflow-hidden min-h-[460px] flex items-center justify-center p-6 sm:p-12 text-center border border-cyan-500/30 shadow-2xl">
                   <img
                     src={APP_ASSETS.reef1}
@@ -1893,7 +2076,7 @@
                     </div>
 
                     <p className="text-sm sm:text-base text-slate-300 max-w-2xl leading-relaxed">
-                      Plataforma colaborativa que integra a investigadores marinos, voluntarios y ciudadanos para la restauración de arrecifes de coral, limpieza de playas, monitoreo de tortugas y acción climática oceánica.
+                      Plataforma colaborativa que integra a investigadoras e investigadores marinos, voluntarios y ciudadanos para la restauración de arrecifes de coral, limpieza de playas, monitoreo de tortugas y acción climática oceánica.
                     </p>
 
                     <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
@@ -1913,7 +2096,7 @@
                   </div>
                 </div>
 
-                {/* Métricas Globales ODS 14 */}
+                {/* Métricas Globales */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
                   <div className="ocean-glass-card rounded-3xl p-5 text-center space-y-1">
                     <span className="text-3xl font-black text-cyan-300">{activities.length}</span>
@@ -1933,7 +2116,7 @@
                   </div>
                 </div>
 
-                {/* Secciones Destacadas con Imágenes Originales */}
+                {/* Secciones Destacadas */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <div
                     onClick={() => setCurrentView('calendar')}
@@ -1954,7 +2137,7 @@
                         Calendario y Convocatorias
                       </h3>
                       <p className="text-xs text-slate-300 leading-relaxed">
-                        Visualiza el almanaque de 7 columnas para 2026 y 2027. Consulta cupos e inscríbete como voluntario.
+                        Visualiza el almanaque de 7 columnas para 2026 y 2027. Consulta cupos, inscríbete y como administradora crea, edita o elimina actividades.
                       </p>
                     </div>
                   </div>
@@ -1978,7 +2161,7 @@
                         Insignias y Reconocimientos
                       </h3>
                       <p className="text-xs text-slate-300 leading-relaxed">
-                        Desbloquea insignias por horas aportadas, participación en el foro y actividades de conservación marina.
+                        Desbloquea insignias por metas cumplidas y permite a la administradora otorgar reconocimientos oficiales a miembros nuevos.
                       </p>
                     </div>
                   </div>
@@ -2002,7 +2185,7 @@
                         Denuncias y Donaciones
                       </h3>
                       <p className="text-xs text-slate-300 leading-relaxed">
-                        Reporta vertimientos o pesca ilícita y apoya campañas de financiamiento para guarderías de coral.
+                        Reporta vertimientos o pesca ilícita y financia guarderías de coral en el Caribe y Pacífico colombiano.
                       </p>
                     </div>
                   </div>
@@ -2011,11 +2194,10 @@
             )}
 
             {/* ---------------------------------------------------------- */}
-            {/* VISTA 2: CALENDARIO DE 7 COLUMNAS (2026 - 2027 & BACKLOG) */}
+            {/* VISTA 2: CALENDARIO DE 7 COLUMNAS (2026 - 2027 & ADMIN) */}
             {/* ---------------------------------------------------------- */}
             {currentView === 'calendar' && (
               <div className="space-y-6 animate-in fade-in duration-200">
-                {/* Cabecera del Calendario */}
                 <div className="ocean-glass-card rounded-[2rem] p-6 sm:p-8 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                   <div>
                     <span className="text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
@@ -2025,14 +2207,14 @@
                       Calendario de <span className="ocean-gradient-text">Actividades</span>
                     </h2>
                     <p className="text-xs text-slate-300 mt-1">
-                      Explora todos los meses de 2026 y 2027. Consulta cupos en tiempo real y postúlate como voluntario.
+                      Explora todos los meses de 2026 y 2027. Consulta cupos en tiempo real, inscríbete o gestiona convocatorias como administradora.
                     </p>
                   </div>
 
                   <div className="flex flex-wrap items-center gap-2">
                     {isAdmin && (
                       <button
-                        onClick={() => setCreateActivityModalOpen(true)}
+                        onClick={handleOpenCreateActivity}
                         className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-slate-950 font-black text-xs uppercase tracking-wider shadow-md hover:scale-105 transition-all flex items-center gap-1.5"
                       >
                         <span>➕</span> Nueva Actividad (Admin / Backlog)
@@ -2054,7 +2236,6 @@
 
                 {/* Controles de Navegación del Calendario */}
                 <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
-                  {/* Selector de Mes y Año con Controles de Flecha */}
                   <div className="flex items-center gap-2 bg-[#0b2545] p-1.5 rounded-2xl border border-cyan-500/20">
                     <button
                       onClick={handlePrevMonth}
@@ -2102,7 +2283,6 @@
                     </button>
                   </div>
 
-                  {/* Filtro por Categoría */}
                   <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
                     {['Todos', 'Limpieza', 'Conservación', 'Taller', 'Educación'].map(type => (
                       <button
@@ -2120,21 +2300,17 @@
                   </div>
                 </div>
 
-                {/* ALMANAQUE MENSUAL DE 7 DÍAS (DOM - SÁB) */}
+                {/* ALMANAQUE MENSUAL DE 7 DÍAS */}
                 <div className="rounded-3xl bg-[#07192f] border border-cyan-500/20 overflow-hidden shadow-xl">
-                  {/* Días de la Semana */}
                   <div className="grid grid-cols-7 bg-[#0b2545] py-2.5 text-center text-xs font-black uppercase text-cyan-300 border-b border-cyan-500/20">
                     <span>Dom</span><span>Lun</span><span>Mar</span><span>Mié</span><span>Jue</span><span>Vie</span><span>Sáb</span>
                   </div>
 
-                  {/* Casillas de Días */}
                   <div className="grid grid-cols-7 gap-[1px] bg-cyan-950/30">
-                    {/* Espacios vacíos antes del primer día */}
                     {Array.from({ length: firstDayOfWeek }).map((_, idx) => (
                       <div key={`empty-${idx}`} className="min-h-[85px] sm:min-h-[100px] p-2 bg-[#051329]/50 border border-slate-900/40"></div>
                     ))}
 
-                    {/* Días del mes */}
                     {Array.from({ length: daysInCurrentMonth }).map((_, idx) => {
                       const day = idx + 1;
                       const dateStr = `${monthPrefix}-${String(day).padStart(2, '0')}`;
@@ -2184,7 +2360,7 @@
                   </div>
                 </div>
 
-                {/* TARJETAS DETALLADAS DE ACTIVIDADES DEL MES */}
+                {/* TARJETAS DETALLADAS DE ACTIVIDADES */}
                 <div className="pt-4 space-y-4">
                   <div className="flex items-center justify-between">
                     <h3 className="text-lg font-black text-white flex items-center gap-2">
@@ -2200,6 +2376,14 @@
                       <p className="text-xs text-slate-300 max-w-md mx-auto">
                         Usa las flechas del calendario para consultar los demás meses de 2026 y 2027.
                       </p>
+                      {isAdmin && (
+                        <button
+                          onClick={handleOpenCreateActivity}
+                          className="px-4 py-2 rounded-xl bg-amber-400 text-slate-950 font-bold text-xs uppercase"
+                        >
+                          ➕ Crear Actividad en Este Mes
+                        </button>
+                      )}
                     </div>
                   ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -2243,33 +2427,55 @@
                               </div>
                             </div>
 
-                            <div className="p-5 pt-0 flex items-center justify-between border-t border-slate-800/60 mt-3 pt-3">
-                              <span className="text-xs font-bold text-slate-400">
-                                Cupos: <strong className="text-emerald-400">{spotsLeft}</strong> de {act.totalSpots}
-                              </span>
-                              <div className="flex gap-2">
-                                <button
-                                  onClick={() => setSelectedActivityModal(act)}
-                                  className="px-3 py-1.5 rounded-xl bg-[#0b2545] border border-cyan-500/30 text-cyan-300 hover:text-white text-xs font-bold"
-                                >
-                                  Detalles
-                                </button>
-                                {isEnrolled ? (
+                            <div className="p-5 pt-0 border-t border-slate-800/60 mt-3 pt-3 space-y-3">
+                              <div className="flex items-center justify-between">
+                                <span className="text-xs font-bold text-slate-400">
+                                  Cupos: <strong className="text-emerald-400">{spotsLeft}</strong> de {act.totalSpots}
+                                </span>
+                                <div className="flex gap-1.5">
                                   <button
-                                    onClick={() => handleCancelEnrollActivity(act.id)}
-                                    className="px-3 py-1.5 rounded-xl bg-red-500/20 text-red-300 border border-red-500/40 text-xs font-bold hover:bg-red-500/30"
+                                    onClick={() => setSelectedActivityModal(act)}
+                                    className="px-2.5 py-1.5 rounded-xl bg-[#0b2545] border border-cyan-500/30 text-cyan-300 hover:text-white text-xs font-bold"
                                   >
-                                    Cancelar
+                                    Detalles
                                   </button>
-                                ) : (
-                                  <button
-                                    onClick={() => handleEnrollActivity(act.id)}
-                                    className="px-3 py-1.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-xs font-black shadow-md shadow-cyan-500/20"
-                                  >
-                                    Inscribirme
-                                  </button>
-                                )}
+                                  {isEnrolled ? (
+                                    <button
+                                      onClick={() => handleCancelEnrollActivity(act.id)}
+                                      className="px-2.5 py-1.5 rounded-xl bg-red-500/20 text-red-300 border border-red-500/40 text-xs font-bold hover:bg-red-500/30"
+                                    >
+                                      Cancelar
+                                    </button>
+                                  ) : (
+                                    <button
+                                      onClick={() => handleEnrollActivity(act.id)}
+                                      className="px-2.5 py-1.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-xs font-black shadow-md shadow-cyan-500/20"
+                                    >
+                                      Inscribirme
+                                    </button>
+                                  )}
+                                </div>
                               </div>
+
+                              {/* Permisos Especiales de Administradora en Actividad */}
+                              {isAdmin && (
+                                <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-800/40">
+                                  <button
+                                    onClick={() => handleOpenEditActivity(act)}
+                                    className="px-2.5 py-1 rounded-lg bg-amber-500/20 text-amber-300 border border-amber-500/30 hover:bg-amber-500/30 text-[11px] font-bold"
+                                    title="Editar actividad como Administradora"
+                                  >
+                                    ✏️ Editar
+                                  </button>
+                                  <button
+                                    onClick={() => handleDeleteActivity(act.id)}
+                                    className="px-2.5 py-1 rounded-lg bg-red-500/20 text-red-300 border border-red-500/30 hover:bg-red-500/30 text-[11px] font-bold"
+                                    title="Eliminar actividad como Administradora"
+                                  >
+                                    🗑️ Eliminar
+                                  </button>
+                                </div>
+                              )}
                             </div>
                           </div>
                         );
@@ -2281,7 +2487,7 @@
             )}
 
             {/* ---------------------------------------------------------- */}
-            {/* VISTA 3: FORO CIENTÍFICO Y COMUNITARIO */}
+            {/* VISTA 3: FORO CIENTÍFICO Y COMUNITARIO (ADMIN EDIT/DELETE) */}
             {/* ---------------------------------------------------------- */}
             {currentView === 'forum' && (
               <div className="space-y-6 animate-in fade-in duration-300">
@@ -2294,22 +2500,19 @@
                       Foro Científico y <span className="ocean-gradient-text">Comunitario</span>
                     </h2>
                     <p className="text-xs text-slate-300 mt-1">
-                      Espacio de intercambio para expertos marinos, voluntarios y ciudadanos. Sincronizado en tiempo real con Supabase.
+                      Espacio abierto a debates marinos con sincronización en tiempo real con Supabase. Administradora tiene control total de creación, edición y eliminación.
                     </p>
                   </div>
 
                   <button
-                    onClick={() => {
-                      if (!currentUser) { setAuthTab('login'); setAuthModalOpen(true); }
-                      else setNewPostModalOpen(true);
-                    }}
+                    onClick={handleOpenCreatePost}
                     className="px-5 py-2.5 rounded-2xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-black text-xs uppercase tracking-wider shadow-lg shadow-cyan-500/25 flex items-center gap-2 self-start md:self-auto"
                   >
                     <span>✍️</span> Nueva Publicación
                   </button>
                 </div>
 
-                {/* Filtros y Búsqueda del Foro */}
+                {/* Filtros */}
                 <div className="flex flex-col sm:flex-row gap-3">
                   <div className="relative flex-1">
                     <input
@@ -2337,11 +2540,13 @@
                   </div>
                 </div>
 
-                {/* Lista de Hilos del Foro */}
+                {/* Lista de Publicaciones */}
                 <div className="space-y-6">
                   {filteredForumPosts.map(post => {
                     const uid = currentUser ? currentUser.id : 'anon-device';
                     const isLiked = post.likedBy.includes(uid);
+                    const canEdit = currentUser && currentUser.canEditPost(post);
+                    const canDelete = currentUser && currentUser.canDeletePost(post);
 
                     return (
                       <div
@@ -2350,11 +2555,7 @@
                       >
                         <div className="flex items-center justify-between gap-3">
                           <div className="flex items-center gap-3">
-                            <img
-                              src={post.avatar}
-                              alt={post.author}
-                              className="w-10 h-10 rounded-2xl object-cover ring-2 ring-cyan-400/30"
-                            />
+                            <UserAvatar avatar={post.avatar} size="w-10 h-10" textSize="text-xl" />
                             <div>
                               <div className="flex items-center gap-2">
                                 <span className="font-bold text-white text-sm">{post.author}</span>
@@ -2372,15 +2573,27 @@
                             </div>
                           </div>
 
-                          {isAdmin && (
-                            <button
-                              onClick={() => handleDeletePost(post.id)}
-                              className="px-2.5 py-1 rounded-lg bg-red-500/20 text-red-300 border border-red-500/30 text-xs font-bold hover:bg-red-500/30"
-                              title="Moderar publicación"
-                            >
-                              🗑️ Moderar
-                            </button>
-                          )}
+                          {/* Acciones de Edición y Moderación para Admin o Autor */}
+                          <div className="flex items-center gap-1.5">
+                            {canEdit && (
+                              <button
+                                onClick={() => handleOpenEditPost(post)}
+                                className="px-2.5 py-1 rounded-lg bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs font-bold hover:bg-amber-500/30"
+                                title="Editar publicación"
+                              >
+                                ✏️ Editar
+                              </button>
+                            )}
+                            {canDelete && (
+                              <button
+                                onClick={() => handleDeletePost(post.id)}
+                                className="px-2.5 py-1 rounded-lg bg-red-500/20 text-red-300 border border-red-500/30 text-xs font-bold hover:bg-red-500/30"
+                                title="Eliminar publicación"
+                              >
+                                🗑️ Borrar
+                              </button>
+                            )}
+                          </div>
                         </div>
 
                         <div className="space-y-1.5">
@@ -2390,7 +2603,7 @@
                           </p>
                         </div>
 
-                        {/* Barra de Reacciones */}
+                        {/* Reacciones */}
                         <div className="flex items-center gap-4 pt-2 border-t border-slate-800/80 text-xs text-slate-400">
                           <button
                             onClick={() => handleToggleLike(post.id)}
@@ -2406,13 +2619,16 @@
                           <span>💬 {post.comments.length} comentarios</span>
                         </div>
 
-                        {/* Lista de Comentarios / Respuestas */}
+                        {/* Comentarios */}
                         {post.comments.length > 0 && (
                           <div className="space-y-2.5 pl-4 sm:pl-6 border-l-2 border-cyan-500/30 pt-2">
                             {post.comments.map(c => (
                               <div key={c.id} className="p-3 rounded-2xl bg-[#07192f]/70 border border-slate-800 text-xs space-y-1">
                                 <div className="flex items-center justify-between">
-                                  <span className="font-bold text-cyan-300">{c.author}</span>
+                                  <div className="flex items-center gap-1.5">
+                                    <span className="text-base">{c.avatar || '🐚'}</span>
+                                    <span className="font-bold text-cyan-300">{c.author}</span>
+                                  </div>
                                   <span className="text-[10px] text-slate-500">{c.createdAt}</span>
                                 </div>
                                 <p className="text-slate-200">{c.content}</p>
@@ -2421,7 +2637,7 @@
                           </div>
                         )}
 
-                        {/* Input para Responder */}
+                        {/* Input Responder */}
                         <div className="flex items-center gap-2 pt-2">
                           <input
                             type="text"
@@ -2446,7 +2662,7 @@
             )}
 
             {/* ---------------------------------------------------------- */}
-            {/* VISTA 4: INSIGNIAS Y LOGROS (SPRINT 1 + SPRINT 2) */}
+            {/* VISTA 4: INSIGNIAS Y OTORGAR RECONOCIMIENTOS */}
             {/* ---------------------------------------------------------- */}
             {currentView === 'badges' && (
               <div className="space-y-8 animate-in fade-in duration-300">
@@ -2459,13 +2675,13 @@
                       Insignias y <span className="ocean-gradient-text">Logros de Conservación</span>
                     </h2>
                     <p className="text-xs text-slate-300 mt-1">
-                      Gobernado por la clase polimórfica <code className="text-cyan-300 bg-cyan-950 px-1 py-0.5 rounded">Badge</code> con cálculo automático de horas y metas.
+                      Gobernado por la clase <code className="text-cyan-300 bg-cyan-950 px-1 py-0.5 rounded">Badge</code>. Como administradora puedes otorgar insignias directamente a usuarios y voluntarios nuevos.
                     </p>
                   </div>
 
                   {isAdmin && (
                     <button
-                      onClick={() => setGrantBadgeModalOpen(true)}
+                      onClick={() => handleOpenGrantBadge()}
                       className="px-4 py-2.5 rounded-2xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-xs uppercase tracking-wider transition-all shadow-lg shadow-amber-500/25 flex items-center gap-1.5 self-start sm:self-auto"
                     >
                       <span>👑</span> Otorgar Insignia Oficial
@@ -2505,7 +2721,7 @@
                   )}
                 </div>
 
-                {/* Cuadrícula de 8 Insignias (4 columnas en escritorio, 1-2 en móvil) */}
+                {/* Cuadrícula de 8 Insignias */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                   {displayedBadges.map(b => {
                     const isEarned = currentUser ? b.isEarnedBy(currentUser) : false;
@@ -2547,7 +2763,7 @@
             )}
 
             {/* ---------------------------------------------------------- */}
-            {/* VISTA 5: DENUNCIAS AMBIENTALES Y DONACIONES (CIUDADANO) */}
+            {/* VISTA 5: DENUNCIAS Y DONACIONES */}
             {/* ---------------------------------------------------------- */}
             {currentView === 'citizen' && (
               <div className="space-y-8 animate-in fade-in duration-300">
@@ -2581,7 +2797,6 @@
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Tarjeta Denuncias */}
                   <div className="ocean-glass-card rounded-3xl p-6 space-y-4">
                     <h3 className="text-lg font-black text-white flex items-center gap-2">
                       <span>🚨</span> Denuncias Ambientales Registradas
@@ -2598,7 +2813,6 @@
                     </div>
                   </div>
 
-                  {/* Tarjeta Campañas */}
                   <div className="ocean-glass-card rounded-3xl p-6 space-y-4">
                     <h3 className="text-lg font-black text-white flex items-center gap-2">
                       <span>🌱</span> Campaña Activa: Adopta y Siembra un Coral 2026
@@ -2629,7 +2843,7 @@
             )}
 
             {/* ---------------------------------------------------------- */}
-            {/* VISTA 6: MI PERFIL (GESTIÓN POR ROLES RF02) */}
+            {/* VISTA 6: MI PERFIL (CAMBIAR EMOJI MARINO) */}
             {/* ---------------------------------------------------------- */}
             {currentView === 'profile' && (
               <div className="space-y-8 animate-in fade-in duration-300">
@@ -2638,7 +2852,7 @@
                     <p className="text-3xl">👤</p>
                     <h3 className="text-lg font-bold text-white">No has iniciado sesión</h3>
                     <p className="text-xs text-slate-400 max-w-sm mx-auto">
-                      Inicia sesión para visualizar tu historial de voluntariado, biografía científica o reportes ciudadanos.
+                      Inicia sesión para visualizar tu historial de voluntariado, biografía científica o elegir tu avatar marino.
                     </p>
                     <button
                       onClick={() => { setAuthTab('login'); setAuthModalOpen(true); }}
@@ -2649,30 +2863,64 @@
                   </div>
                 ) : (
                   <>
-                    {/* Perfil de Experto / Investigador Marino */}
-                    {currentUser.role === 'experto' && (
-                      <div className="space-y-6">
-                        <div className="ocean-glass-card rounded-3xl p-6 sm:p-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-                          <div className="flex items-center gap-4 sm:gap-6">
-                            <img
-                              src={currentUser.avatar}
-                              alt={currentUser.name}
-                              className="w-20 h-20 rounded-3xl object-cover ring-4 ring-purple-500/40"
-                            />
-                            <div>
-                              <div className="flex flex-wrap items-center gap-2">
-                                <h2 className="text-2xl sm:text-3xl font-black text-white">{currentUser.name}</h2>
-                                <span className="text-xs font-black px-2.5 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/40">
-                                  Investigador Marino
-                                </span>
-                              </div>
-                              <p className="text-xs text-cyan-300 mt-1">🏛️ {currentUser.institution}</p>
-                              <p className="text-xs text-slate-400">🔬 Especialidad: {currentUser.biologicalSpecialty} • 📜 {currentUser.professionalCredentials}</p>
-                            </div>
+                    {/* CABECERA GENERAL DEL PERFIL CON CAMBIO DE AVATAR */}
+                    <div className="ocean-glass-card rounded-3xl p-6 sm:p-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+                      <div className="flex items-center gap-4 sm:gap-6">
+                        <div className="relative group cursor-pointer" onClick={() => setChangeAvatarModalOpen(true)} title="Haz clic para cambiar tu emoji de vida marina">
+                          <UserAvatar avatar={currentUser.avatar} size="w-20 h-20 sm:w-24 sm:h-24" textSize="text-4xl" />
+                          <div className="absolute inset-0 bg-black/50 rounded-2xl opacity-0 group-hover:opacity-100 flex items-center justify-center text-xs font-black text-cyan-300 transition-opacity">
+                            Cambiar
                           </div>
                         </div>
 
-                        {/* Biografía Científica */}
+                        <div>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <h2 className="text-2xl sm:text-3xl font-black text-white">{currentUser.name}</h2>
+                            <span className={`text-xs font-black px-2.5 py-0.5 rounded-full border uppercase ${currentUser.getRoleBadgeColor()}`}>
+                              {currentUser.getRoleTitle()}
+                            </span>
+                          </div>
+                          <p className="text-xs text-slate-400 mt-1">📍 {currentUser.location} • Correo: <span className="text-cyan-300">{currentUser.email}</span></p>
+                          <button
+                            onClick={() => setChangeAvatarModalOpen(true)}
+                            className="mt-2 px-3 py-1 rounded-xl bg-[#0b2545] border border-cyan-500/30 text-cyan-300 hover:text-white text-xs font-bold flex items-center gap-1.5"
+                          >
+                            <span>🎨</span> Cambiar Avatar Marino ({currentUser.avatar})
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Métricas / Accesos Rápidos */}
+                      <div className="flex items-center gap-4 w-full md:w-auto justify-around bg-[#07192f] p-4 rounded-2xl border border-cyan-500/20">
+                        {currentUser.role === 'voluntario' && (
+                          <>
+                            <div className="text-center">
+                              <span className="text-3xl font-black text-cyan-400">{currentUser.calculateTotalHours()}h</span>
+                              <p className="text-[10px] text-slate-400 uppercase font-bold">Horas</p>
+                            </div>
+                            <div className="h-8 w-px bg-slate-800"></div>
+                            <div className="text-center">
+                              <span className="text-3xl font-black text-emerald-400">{(currentUser.participations || []).length}</span>
+                              <p className="text-[10px] text-slate-400 uppercase font-bold">Jornadas</p>
+                            </div>
+                            <div className="h-8 w-px bg-slate-800"></div>
+                          </>
+                        )}
+                        <div className="text-center">
+                          <span className="text-3xl font-black text-amber-400">{currentUser.earnedBadgeIds.length}</span>
+                          <p className="text-[10px] text-slate-400 uppercase font-bold">Insignias</p>
+                        </div>
+                        <div className="h-8 w-px bg-slate-800"></div>
+                        <div className="text-center">
+                          <span className="text-3xl font-black text-purple-400">{currentUser.xp}</span>
+                          <p className="text-[10px] text-slate-400 uppercase font-bold">XP (Nivel {currentUser.level})</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Perfil de Experto */}
+                    {currentUser.role === 'experto' && (
+                      <div className="space-y-6">
                         <div className="ocean-glass-card rounded-3xl p-6 space-y-3">
                           <div className="flex items-center justify-between">
                             <h3 className="text-lg font-black text-white flex items-center gap-2">
@@ -2690,7 +2938,6 @@
                           </p>
                         </div>
 
-                        {/* Áreas de Investigación */}
                         <div className="ocean-glass-card rounded-3xl p-6 space-y-3">
                           <div className="flex items-center justify-between">
                             <h3 className="text-lg font-black text-white flex items-center gap-2">
@@ -2712,11 +2959,10 @@
                           </div>
                         </div>
 
-                        {/* Publicaciones Científicas */}
                         <div className="ocean-glass-card rounded-3xl p-6 space-y-4">
                           <div className="flex items-center justify-between">
                             <h3 className="text-lg font-black text-white flex items-center gap-2">
-                              <span>📑</span> Publicaciones Científicas Registradas
+                              <span>📑</span> Publicaciones Científicas
                             </h3>
                             <button
                               onClick={() => setAddPubModalOpen(true)}
@@ -2748,140 +2994,54 @@
                       </div>
                     )}
 
-                    {/* Perfil de Voluntario Oceánico */}
+                    {/* Perfil de Voluntario */}
                     {currentUser.role === 'voluntario' && (
-                      <div className="space-y-6">
-                        <div className="ocean-glass-card rounded-3xl p-6 sm:p-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-                          <div className="flex items-center gap-4 sm:gap-6">
-                            <img
-                              src={currentUser.avatar}
-                              alt={currentUser.name}
-                              className="w-20 h-20 rounded-3xl object-cover ring-4 ring-emerald-500/40"
-                            />
-                            <div>
-                              <div className="flex flex-wrap items-center gap-2">
-                                <h2 className="text-2xl sm:text-3xl font-black text-white">{currentUser.name}</h2>
-                                <span className="text-xs font-black px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
-                                  Voluntario del Océano
+                      <div className="ocean-glass-card rounded-3xl p-6 space-y-4">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                          <div>
+                            <h3 className="text-lg font-black text-white flex items-center gap-2">
+                              <span>📅</span> Historial de Participación
+                            </h3>
+                            <p className="text-xs text-slate-400">Registro cronológico de jornadas y horas aportadas</p>
+                          </div>
+
+                          <button
+                            onClick={handleSimulateParticipation}
+                            className="px-4 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-black text-xs uppercase shadow-md shadow-cyan-500/20 self-start sm:self-auto"
+                          >
+                            ⚡ Registrar Jornada (+2h)
+                          </button>
+                        </div>
+
+                        {(currentUser.participations && currentUser.participations.length > 0) ? (
+                          <div className="divide-y divide-slate-800">
+                            {currentUser.participations.map(p => (
+                              <div key={p.id} className="py-3 flex items-center justify-between gap-4">
+                                <div>
+                                  <h4 className="text-sm font-bold text-white">{p.activityName}</h4>
+                                  <p className="text-xs text-slate-400">Registrado el {new Date(p.registeredAt).toLocaleDateString()} • Estado: <span className="text-emerald-400 font-bold">{p.status}</span></p>
+                                </div>
+                                <span className="px-3 py-1 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 font-black text-xs">
+                                  +{p.hours} Horas
                                 </span>
                               </div>
-                              <p className="text-xs text-slate-400 mt-1">📍 {currentUser.location} • Miembro voluntario activo</p>
-                              <div className="flex flex-wrap gap-1.5 mt-2">
-                                {(currentUser.interests || []).map((interest, i) => (
-                                  <span key={i} className="text-[10px] bg-[#0b2545] text-cyan-300 px-2.5 py-0.5 rounded-lg border border-cyan-500/20">
-                                    {interest}
-                                  </span>
-                                ))}
-                              </div>
-                            </div>
+                            ))}
                           </div>
-
-                          {/* Métricas Clave de Voluntariado */}
-                          <div className="flex items-center gap-4 w-full md:w-auto justify-around bg-[#07192f] p-4 rounded-2xl border border-cyan-500/20">
-                            <div className="text-center">
-                              <span className="text-3xl font-black text-cyan-400">{currentUser.calculateTotalHours()}h</span>
-                              <p className="text-[10px] text-slate-400 uppercase font-bold">Horas Validadas</p>
-                            </div>
-                            <div className="h-8 w-px bg-slate-800"></div>
-                            <div className="text-center">
-                              <span className="text-3xl font-black text-emerald-400">{(currentUser.participations || []).length}</span>
-                              <p className="text-[10px] text-slate-400 uppercase font-bold">Jornadas</p>
-                            </div>
-                            <div className="h-8 w-px bg-slate-800"></div>
-                            <div className="text-center">
-                              <span className="text-3xl font-black text-amber-400">{currentUser.earnedBadgeIds.length}</span>
-                              <p className="text-[10px] text-slate-400 uppercase font-bold">Insignias</p>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Historial de Participaciones */}
-                        <div className="ocean-glass-card rounded-3xl p-6 space-y-4">
-                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                            <div>
-                              <h3 className="text-lg font-black text-white flex items-center gap-2">
-                                <span>📅</span> Historial de Participación en Conservación
-                              </h3>
-                              <p className="text-xs text-slate-400">Registro cronológico de jornadas y horas aportadas</p>
-                            </div>
-
-                            {/* Simulador de Jornada */}
+                        ) : (
+                          <div className="p-8 text-center bg-cyan-950/20 rounded-2xl border border-dashed border-cyan-500/30 space-y-3">
+                            <span className="text-4xl">🌊</span>
+                            <h4 className="text-base font-bold text-white">¡Bienvenida(o) a la comunidad marina!</h4>
+                            <p className="text-xs text-slate-300 max-w-md mx-auto">
+                              Aún no has participado en actividades de conservación marina. ¡Te invitamos a explorar las convocatorias abiertas y unirte a la acción por nuestros océanos!
+                            </p>
                             <button
-                              onClick={handleSimulateParticipation}
-                              className="px-4 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-black text-xs uppercase shadow-md shadow-cyan-500/20 self-start sm:self-auto"
+                              onClick={() => setCurrentView('calendar')}
+                              className="px-4 py-2 rounded-xl bg-cyan-500 text-slate-950 text-xs font-bold uppercase hover:bg-cyan-400"
                             >
-                              ⚡ Registrar Jornada (+2h)
+                              Explorar Calendario de Actividades
                             </button>
                           </div>
-
-                          {(currentUser.participations && currentUser.participations.length > 0) ? (
-                            <div className="divide-y divide-slate-800">
-                              {currentUser.participations.map(p => (
-                                <div key={p.id} className="py-3 flex items-center justify-between gap-4">
-                                  <div>
-                                    <h4 className="text-sm font-bold text-white">{p.activityName}</h4>
-                                    <p className="text-xs text-slate-400">Registrado el {new Date(p.registeredAt).toLocaleDateString()} • Estado: <span className="text-emerald-400 font-bold">{p.status}</span></p>
-                                  </div>
-                                  <span className="px-3 py-1 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 font-black text-xs">
-                                    +{p.hours} Horas
-                                  </span>
-                                </div>
-                              ))}
-                            </div>
-                          ) : (
-                            /* Mensaje para voluntario sin actividad (CP-HU-002-2-04) */
-                            <div className="p-8 text-center bg-cyan-950/20 rounded-2xl border border-dashed border-cyan-500/30 space-y-3">
-                              <span className="text-4xl">🌊</span>
-                              <h4 className="text-base font-bold text-white">¡Bienvenido(a) a la comunidad marina!</h4>
-                              <p className="text-xs text-slate-300 max-w-md mx-auto">
-                                Aún no has participado en actividades de conservación marina. ¡Te invitamos a explorar las convocatorias abiertas y unirte a la acción por nuestros océanos!
-                              </p>
-                              <button
-                                onClick={() => setCurrentView('calendar')}
-                                className="px-4 py-2 rounded-xl bg-cyan-500 text-slate-950 text-xs font-bold uppercase hover:bg-cyan-400"
-                              >
-                                Explorar Calendario de Actividades
-                              </button>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Perfil de Ciudadano */}
-                    {currentUser.role === 'ciudadano' && (
-                      <div className="space-y-6">
-                        <div className="ocean-glass-card rounded-3xl p-6 sm:p-8 flex items-center gap-4">
-                          <img
-                            src={currentUser.avatar}
-                            alt={currentUser.name}
-                            className="w-16 h-16 rounded-2xl object-cover ring-2 ring-cyan-400/40"
-                          />
-                          <div>
-                            <h2 className="text-2xl font-black text-white">{currentUser.name}</h2>
-                            <p className="text-xs text-cyan-300 font-bold">Ciudadano Colaborador ODS 14</p>
-                            <p className="text-xs text-slate-400">📍 Ubicación: {currentUser.location}</p>
-                          </div>
-                        </div>
-
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                          <button
-                            onClick={() => setCurrentView('citizen')}
-                            className="ocean-glass-card rounded-3xl p-6 text-center space-y-2 hover:border-cyan-400 transition-all"
-                          >
-                            <span className="text-3xl">🚨</span>
-                            <h4 className="text-sm font-bold text-white">Denuncias Ambientales</h4>
-                            <p className="text-xs text-slate-300">Reporta vertimientos o daños costeros.</p>
-                          </button>
-                          <button
-                            onClick={() => setCurrentView('citizen')}
-                            className="ocean-glass-card rounded-3xl p-6 text-center space-y-2 hover:border-emerald-400 transition-all"
-                          >
-                            <span className="text-3xl">💙</span>
-                            <h4 className="text-sm font-bold text-white">Campañas de Donación</h4>
-                            <p className="text-xs text-slate-300">Contribuye a las guarderías de coral.</p>
-                          </button>
-                        </div>
+                        )}
                       </div>
                     )}
 
@@ -2889,15 +3049,15 @@
                     {currentUser.role === 'administrador' && (
                       <div className="ocean-glass-card rounded-3xl p-8 space-y-4 text-center">
                         <span className="text-5xl">👑</span>
-                        <h2 className="text-2xl font-black text-white">Administrador General</h2>
-                        <p className="text-xs text-slate-300 max-w-md mx-auto">
-                          Tienes control total sobre la moderación del foro, gestión de usuarios, creación de actividades en el backlog y otorgamiento de reconocimientos oficiales.
+                        <h2 className="text-2xl font-black text-white">Privilegios Plenos de Administradora</h2>
+                        <p className="text-xs text-slate-300 max-w-xl mx-auto leading-relaxed">
+                          Tienes permisos para crear, editar y eliminar actividades en el calendario; publicar, editar y moderar publicaciones en el foro; otorgar insignias oficiales a usuarios nuevos; supervisar todas las cuentas registradas y ayudarles a restablecer su contraseña si lo solicitan.
                         </p>
                         <button
                           onClick={() => setCurrentView('admin')}
                           className="px-6 py-3 rounded-2xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-xs uppercase shadow-lg shadow-amber-500/25"
                         >
-                          Ir al Panel de Administración
+                          Ir al Panel de Administración General
                         </button>
                       </div>
                     )}
@@ -2907,7 +3067,7 @@
             )}
 
             {/* ---------------------------------------------------------- */}
-            {/* VISTA 7: PANEL DE ADMINISTRACIÓN (RF09: HU-009-2) */}
+            {/* VISTA 7: PANEL DE ADMINISTRACIÓN (CUENTAS & CONTRASEÑAS) */}
             {/* ---------------------------------------------------------- */}
             {currentView === 'admin' && (
               <div className="space-y-8 animate-in fade-in duration-300">
@@ -2915,7 +3075,7 @@
                   <div className="ocean-glass-card rounded-3xl p-8 text-center text-red-300 space-y-3">
                     <p className="text-4xl">🚫</p>
                     <h3 className="text-xl font-bold">Acceso Denegado (403)</h3>
-                    <p className="text-xs text-slate-300">Esta sección está restringida exclusivamente para el Administrador General.</p>
+                    <p className="text-xs text-slate-300">Esta sección está restringida exclusivamente para la Administradora General.</p>
                     <button
                       onClick={() => setCurrentView('home')}
                       className="px-4 py-2 rounded-xl bg-cyan-500 text-slate-950 font-bold text-xs uppercase"
@@ -2928,27 +3088,49 @@
                     <div className="ocean-glass-card rounded-[2rem] p-6 sm:p-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
                       <div>
                         <span className="text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
-                          👑 Gestión de Sistema
+                          👑 Panel de Control de la Administradora
                         </span>
                         <h2 className="text-2xl sm:text-3xl font-black text-white mt-2">
-                          Panel de <span className="ocean-gradient-text">Administración General</span>
+                          Gestión de <span className="ocean-gradient-text">Cuentas, Permisos y Seguridad</span>
                         </h2>
                         <p className="text-xs text-slate-300 mt-1">
-                          Control de acceso basado en roles (RBAC), suspensión de cuentas, gestión de actividades del backlog y moderación.
+                          Supervisa todas las cuentas conectadas y registradas, otorga insignias a miembros nuevos y asiste a los usuarios restableciendo su contraseña.
                         </p>
                       </div>
 
-                      <div className="flex gap-2">
+                      <div className="flex flex-wrap gap-2">
                         <button
-                          onClick={() => setCreateActivityModalOpen(true)}
+                          onClick={handleOpenCreateActivity}
                           className="px-4 py-2.5 rounded-2xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-xs uppercase shadow-md shadow-amber-500/25"
                         >
                           ➕ Crear Actividad
                         </button>
+                        <button
+                          onClick={() => handleOpenGrantBadge()}
+                          className="px-4 py-2.5 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs uppercase shadow-md shadow-emerald-500/25"
+                        >
+                          🏅 Otorgar Insignia
+                        </button>
                       </div>
                     </div>
 
-                    {/* Filtros de la Tabla de Usuarios */}
+                    {/* Resumen de Cuentas */}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      <div className="p-4 rounded-2xl bg-[#0b2545] border border-cyan-500/20 text-center">
+                        <span className="text-2xl font-black text-cyan-300">{users.length}</span>
+                        <p className="text-[11px] text-slate-400 font-bold uppercase">Cuentas Registradas</p>
+                      </div>
+                      <div className="p-4 rounded-2xl bg-[#0b2545] border border-emerald-500/20 text-center">
+                        <span className="text-2xl font-black text-emerald-300">{users.filter(u => u.status === 'activo').length}</span>
+                        <p className="text-[11px] text-slate-400 font-bold uppercase">Cuentas Activas / Conectadas</p>
+                      </div>
+                      <div className="p-4 rounded-2xl bg-[#0b2545] border border-red-500/20 text-center">
+                        <span className="text-2xl font-black text-red-300">{users.filter(u => u.status === 'suspendido').length}</span>
+                        <p className="text-[11px] text-slate-400 font-bold uppercase">Cuentas Suspendidas</p>
+                      </div>
+                    </div>
+
+                    {/* Filtros de la Tabla */}
                     <div className="flex flex-col sm:flex-row gap-3">
                       <input
                         type="text"
@@ -2970,17 +3152,17 @@
                       </select>
                     </div>
 
-                    {/* Tabla de Gestión de Usuarios */}
-                    <div className="ocean-glass-card rounded-3xl overflow-hidden border border-cyan-500/20">
+                    {/* Tabla de Usuarios y Cuentas Conectadas */}
+                    <div className="ocean-glass-card rounded-3xl overflow-hidden border border-cyan-500/20 shadow-xl">
                       <div className="overflow-x-auto">
                         <table className="w-full text-left text-xs">
                           <thead className="bg-[#0b2545] text-cyan-300 uppercase tracking-wider text-[10px] font-black border-b border-cyan-500/20">
                             <tr>
-                              <th className="p-4">Usuario / Correo</th>
+                              <th className="p-4">Usuario / Avatar</th>
                               <th className="p-4">Rol Asignado</th>
-                              <th className="p-4">Estado</th>
-                              <th className="p-4">Horas / XP</th>
-                              <th className="p-4 text-right">Acciones de Gestión</th>
+                              <th className="p-4">Estado Conexión</th>
+                              <th className="p-4">Insignias / Horas</th>
+                              <th className="p-4 text-right">Acciones de Administradora</th>
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-slate-800">
@@ -2993,9 +3175,17 @@
                             ) : (
                               filteredAdminUsers.map(u => (
                                 <tr key={u.id} className="hover:bg-[#07192f]/60 transition-colors">
-                                  <td className="p-4">
-                                    <div className="font-bold text-white">{u.name}</div>
-                                    <div className="text-[11px] text-slate-400">{u.email}</div>
+                                  <td className="p-4 flex items-center gap-3">
+                                    <UserAvatar avatar={u.avatar} size="w-9 h-9" textSize="text-lg" />
+                                    <div>
+                                      <div className="font-bold text-white flex items-center gap-1.5">
+                                        <span>{u.name}</span>
+                                        {u.id === currentUserId && (
+                                          <span className="text-[9px] bg-cyan-500/20 text-cyan-300 px-1.5 py-0.2 rounded font-black border border-cyan-500/30">Tú</span>
+                                        )}
+                                      </div>
+                                      <div className="text-[11px] text-slate-400">{u.email}</div>
+                                    </div>
                                   </td>
                                   <td className="p-4">
                                     <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black border uppercase ${u.getRoleBadgeColor()}`}>
@@ -3008,18 +3198,33 @@
                                         ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
                                         : 'bg-red-500/20 text-red-300 border-red-500/40'
                                     }`}>
-                                      {u.status}
+                                      {u.status === 'activo' ? '🟢 Conectado / Activo' : '🔴 Suspendido'}
                                     </span>
                                   </td>
                                   <td className="p-4 text-slate-300 font-bold">
-                                    {u.role === 'voluntario' ? `${u.calculateTotalHours()}h / ${u.xp} XP` : `${u.xp} XP`}
+                                    {u.role === 'voluntario' ? `${u.calculateTotalHours()}h • ${u.earnedBadgeIds.length} insignias` : `${u.earnedBadgeIds.length} insignias`}
                                   </td>
                                   <td className="p-4 text-right space-x-1.5">
                                     <button
+                                      onClick={() => handleOpenResetPassword(u)}
+                                      className="px-2.5 py-1 rounded-xl bg-purple-500/20 border border-purple-500/40 text-purple-300 hover:bg-purple-500/30 font-bold"
+                                      title="Restablecer contraseña de esta cuenta"
+                                    >
+                                      🔑 Clave
+                                    </button>
+                                    <button
+                                      onClick={() => handleOpenGrantBadge(u)}
+                                      className="px-2.5 py-1 rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 hover:bg-emerald-500/30 font-bold"
+                                      title="Otorgar insignia a este usuario"
+                                    >
+                                      🏅 Insignia
+                                    </button>
+                                    <button
                                       onClick={() => handleOpenChangeRole(u)}
                                       className="px-2.5 py-1 rounded-xl bg-[#0b2545] border border-cyan-500/30 text-cyan-300 hover:text-white font-bold"
+                                      title="Cambiar rol"
                                     >
-                                      Cambiar Rol
+                                      Rol
                                     </button>
                                     <button
                                       onClick={() => handleToggleStatus(u)}
@@ -3053,7 +3258,7 @@
           </main>
 
           {/* ============================================================== */}
-          {/* BARRA DE NAVEGACIÓN INFERIOR PARA DISPOSITIVOS MÓVILES */}
+          {/* BARRA MÓVIL INFERIOR */}
           {/* ============================================================== */}
           <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 ocean-glass border-t border-cyan-500/30 flex items-center justify-around py-2 px-1">
             <button
@@ -3107,10 +3312,10 @@
           </nav>
 
           {/* ============================================================== */}
-          {/* MODALES INTERACTIVOS */}
+          {/* MODALES INTERACTIVOS Y DE ADMINISTRACIÓN */}
           {/* ============================================================== */}
 
-          {/* 1. MODAL AUTH: INICIAR SESIÓN / REGISTRO SEGÚN ROL */}
+          {/* 1. MODAL AUTH (LOGIN Y REGISTRO CON SELECTOR DE EMOJI MARINO) */}
           {authModalOpen && (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
               <div className="relative w-full max-w-lg bg-[#07192f] border border-cyan-500/40 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
@@ -3131,7 +3336,6 @@
                   <p className="text-xs text-slate-400">Plataforma de Conservación ODS 14</p>
                 </div>
 
-                {/* Tabs Login vs Register */}
                 <div className="flex rounded-2xl bg-[#0b2545] p-1 border border-cyan-500/20">
                   <button
                     onClick={() => { setAuthTab('login'); setAuthError(''); }}
@@ -3157,7 +3361,6 @@
                   </div>
                 )}
 
-                {/* FORMULARIO LOGIN */}
                 {authTab === 'login' ? (
                   <form onSubmit={handleLoginSubmit} className="space-y-4">
                     <div className="space-y-1">
@@ -3165,7 +3368,7 @@
                       <input
                         type="email"
                         required
-                        placeholder="ej. dr.marina@vidamarina.org"
+                        placeholder="ej. admin@vidamarina.org"
                         value={loginEmail}
                         onChange={e => setLoginEmail(e.target.value)}
                         className="w-full bg-[#0b2545] border border-cyan-500/30 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-cyan-400"
@@ -3190,9 +3393,8 @@
                       Ingresar a la Plataforma
                     </button>
 
-                    {/* Cuentas de Prueba Rápidas */}
                     <div className="p-3 rounded-2xl bg-[#051329] border border-slate-800 text-[11px] text-slate-400 space-y-1.5">
-                      <p className="font-bold text-cyan-300">Accesos Rápidos de Prueba (Sprint 2):</p>
+                      <p className="font-bold text-cyan-300">Accesos Rápidos de Prueba:</p>
                       <div className="grid grid-cols-2 gap-1.5 text-[10px]">
                         <button
                           type="button"
@@ -3226,9 +3428,8 @@
                     </div>
                   </form>
                 ) : (
-                  /* FORMULARIO REGISTRO (RF01) */
                   <form onSubmit={handleRegisterSubmit} className="space-y-4">
-                    {/* Selector de Rol Público (Experto vs Voluntario vs Ciudadano) */}
+                    {/* Selector de Rol */}
                     <div className="space-y-1">
                       <label className="text-xs font-bold text-slate-300">Selecciona tu Rol</label>
                       <div className="grid grid-cols-3 gap-1.5 p-1 rounded-xl bg-[#0b2545]">
@@ -3262,12 +3463,39 @@
                       </div>
                     </div>
 
+                    {/* SELECTOR DE AVATAR CON EMOJIS DE VIDA MARINA */}
+                    <div className="space-y-1.5 p-3 rounded-2xl bg-[#0b2545]/60 border border-cyan-500/20">
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs font-bold text-cyan-300 flex items-center gap-1.5">
+                          <span>🐠</span> Elige tu Avatar de Vida Marina
+                        </label>
+                        <span className="text-xs font-black text-white bg-cyan-950 px-2 py-0.5 rounded-lg border border-cyan-500/30">
+                          Seleccionado: {regAvatar}
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-8 gap-1.5 max-h-24 overflow-y-auto pr-1">
+                        {MARINE_AVATARS.map(av => (
+                          <button
+                            key={av.emoji}
+                            type="button"
+                            onClick={() => setRegAvatar(av.emoji)}
+                            className={`w-8 h-8 rounded-xl flex items-center justify-center text-lg transition-transform hover:scale-125 ${
+                              regAvatar === av.emoji ? 'bg-cyan-500 ring-2 ring-white scale-110' : 'bg-[#07192f] hover:bg-[#0b2545]'
+                            }`}
+                            title={av.name}
+                          >
+                            {av.emoji}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
                     <div className="space-y-1">
                       <label className="text-xs font-bold text-slate-300">Nombre Completo</label>
                       <input
                         type="text"
                         required
-                        placeholder="ej. Dra. Elena Coralina / Mateo Gómez"
+                        placeholder="ej. Elena Coralina / Mateo Gómez"
                         value={regName}
                         onChange={e => setRegName(e.target.value)}
                         className="w-full bg-[#0b2545] border border-cyan-500/30 rounded-xl px-4 py-2 text-xs text-white focus:outline-none focus:border-cyan-400"
@@ -3309,7 +3537,6 @@
                       />
                     </div>
 
-                    {/* Campos específicos de Experto (HU-001-1) */}
                     {regRole === 'experto' && (
                       <div className="space-y-3 p-3 rounded-2xl bg-[#0b2545]/60 border border-purple-500/30">
                         <span className="text-[10px] font-black uppercase text-purple-300">Datos Científicos y Académicos</span>
@@ -3349,7 +3576,6 @@
                       </div>
                     )}
 
-                    {/* Campos específicos de Voluntario (HU-001-2) */}
                     {regRole === 'voluntario' && (
                       <div className="space-y-2 p-3 rounded-2xl bg-[#0b2545]/60 border border-emerald-500/30">
                         <label className="text-[11px] font-black uppercase text-emerald-300">
@@ -3380,10 +3606,6 @@
                       </div>
                     )}
 
-                    <div className="p-2.5 rounded-xl bg-slate-900 border border-slate-800 text-[10px] text-slate-400">
-                      👑 <strong>Nota de Seguridad:</strong> El rol de Administrador no admite registro público. Es otorgado únicamente por la coordinación general de Vida Marina.
-                    </div>
-
                     <button
                       type="submit"
                       className="w-full py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs uppercase tracking-wider shadow-lg shadow-emerald-500/20"
@@ -3396,7 +3618,40 @@
             </div>
           )}
 
-          {/* 2. MODAL DETALLES DE ACTIVIDAD */}
+          {/* 2. MODAL CAMBIAR EMOJI MARINO EN PERFIL */}
+          {changeAvatarModalOpen && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
+              <div className="relative w-full max-w-md bg-[#07192f] border border-cyan-500/40 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-4">
+                <button
+                  onClick={() => setChangeAvatarModalOpen(false)}
+                  className="absolute top-4 right-4 text-slate-400 hover:text-white text-lg p-1"
+                >
+                  ✕
+                </button>
+
+                <div className="text-center space-y-1">
+                  <span className="text-3xl">🌊</span>
+                  <h3 className="text-xl font-black text-white">Elige tu Foto de Vida Marina</h3>
+                  <p className="text-xs text-slate-400">Selecciona el animal o elemento oceánico que te representa:</p>
+                </div>
+
+                <div className="grid grid-cols-4 gap-3 pt-2">
+                  {MARINE_AVATARS.map(av => (
+                    <button
+                      key={av.emoji}
+                      onClick={() => handleSelectProfileAvatar(av.emoji)}
+                      className="p-3 rounded-2xl bg-[#0b2545] border border-cyan-500/20 hover:border-cyan-400 hover:scale-110 transition-all flex flex-col items-center gap-1 group"
+                    >
+                      <span className="text-3xl group-hover:animate-bounce">{av.emoji}</span>
+                      <span className="text-[10px] text-slate-300 font-bold truncate max-w-full">{av.name}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* 3. MODAL DETALLES DE ACTIVIDAD (CON OPCIONES ADMIN EDITAR Y ELIMINAR) */}
           {selectedActivityModal && (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
               <div className="relative w-full max-w-lg bg-[#07192f] border border-cyan-500/40 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
@@ -3438,7 +3693,7 @@
                   <p>🤿 <strong>Requisitos / Equipo:</strong> {selectedActivityModal.requirements}</p>
                 </div>
 
-                <div className="pt-2">
+                <div className="space-y-2 pt-2">
                   {currentUser && currentUser.isEnrolledIn(selectedActivityModal.id) ? (
                     <button
                       onClick={() => handleCancelEnrollActivity(selectedActivityModal.id)}
@@ -3454,12 +3709,34 @@
                       Confirmar Inscripción como Voluntario
                     </button>
                   )}
+
+                  {/* Botones de Control de Administradora */}
+                  {isAdmin && (
+                    <div className="flex gap-2 pt-2 border-t border-slate-800">
+                      <button
+                        onClick={() => {
+                          const act = selectedActivityModal;
+                          setSelectedActivityModal(null);
+                          handleOpenEditActivity(act);
+                        }}
+                        className="flex-1 py-2 rounded-xl bg-amber-500/20 text-amber-300 border border-amber-500/40 font-bold text-xs hover:bg-amber-500/30"
+                      >
+                        ✏️ Editar Convocatoria
+                      </button>
+                      <button
+                        onClick={() => handleDeleteActivity(selectedActivityModal.id)}
+                        className="flex-1 py-2 rounded-xl bg-red-500/20 text-red-300 border border-red-500/40 font-bold text-xs hover:bg-red-500/30"
+                      >
+                        🗑️ Eliminar Actividad
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
           )}
 
-          {/* 3. MODAL CREAR ACTIVIDAD (BACKLOG HU-P-01 - ADMIN) */}
+          {/* 4. MODAL CREAR O EDITAR ACTIVIDAD (ADMIN BACKLOG HU-P-01) */}
           {createActivityModalOpen && (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
               <div className="relative w-full max-w-lg bg-[#07192f] border border-amber-500/40 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
@@ -3472,21 +3749,23 @@
 
                 <div className="text-center space-y-1">
                   <span className="text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
-                    Backlog HU-P-01
+                    {editingActivity ? 'Editar Convocatoria' : 'Backlog HU-P-01'}
                   </span>
-                  <h3 className="text-2xl font-black text-white">Crear Actividad en el Calendario</h3>
-                  <p className="text-xs text-slate-400">Exclusivo para el Administrador General</p>
+                  <h3 className="text-2xl font-black text-white">
+                    {editingActivity ? 'Editar Actividad del Calendario' : 'Crear Nueva Actividad en Calendario'}
+                  </h3>
+                  <p className="text-xs text-slate-400">Permisos exclusivos de la Administradora General</p>
                 </div>
 
-                <form onSubmit={handleCreateActivitySubmit} className="space-y-3.5">
+                <form onSubmit={handleSaveActivitySubmit} className="space-y-3.5">
                   <div className="space-y-1">
                     <label className="text-xs font-bold text-slate-300">Título de la Convocatoria</label>
                     <input
                       type="text"
                       required
                       placeholder="ej. Monitoreo Nocturno de Tortuga Carey"
-                      value={newActForm.title}
-                      onChange={e => setNewActForm({ ...newActForm, title: e.target.value })}
+                      value={actForm.title}
+                      onChange={e => setActForm({ ...actForm, title: e.target.value })}
                       className="w-full bg-[#0b2545] border border-cyan-500/30 rounded-xl px-4 py-2 text-xs text-white focus:outline-none focus:border-cyan-400"
                     />
                   </div>
@@ -3497,8 +3776,8 @@
                       rows="3"
                       required
                       placeholder="Objetivos de la jornada, especies a impactar y dinámica de voluntariado..."
-                      value={newActForm.description}
-                      onChange={e => setNewActForm({ ...newActForm, description: e.target.value })}
+                      value={actForm.description}
+                      onChange={e => setActForm({ ...actForm, description: e.target.value })}
                       className="w-full bg-[#0b2545] border border-cyan-500/30 rounded-xl px-4 py-2 text-xs text-white focus:outline-none focus:border-cyan-400"
                     ></textarea>
                   </div>
@@ -3509,8 +3788,8 @@
                       <input
                         type="date"
                         required
-                        value={newActForm.date}
-                        onChange={e => setNewActForm({ ...newActForm, date: e.target.value })}
+                        value={actForm.date}
+                        onChange={e => setActForm({ ...actForm, date: e.target.value })}
                         className="w-full bg-[#0b2545] border border-cyan-500/30 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-400"
                       />
                     </div>
@@ -3520,8 +3799,8 @@
                         type="text"
                         required
                         placeholder="08:00 - 12:00"
-                        value={newActForm.time}
-                        onChange={e => setNewActForm({ ...newActForm, time: e.target.value })}
+                        value={actForm.time}
+                        onChange={e => setActForm({ ...actForm, time: e.target.value })}
                         className="w-full bg-[#0b2545] border border-cyan-500/30 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-400"
                       />
                     </div>
@@ -3533,8 +3812,8 @@
                       type="text"
                       required
                       placeholder="ej. Bahía Solano, Chocó / Playa Blanca"
-                      value={newActForm.location}
-                      onChange={e => setNewActForm({ ...newActForm, location: e.target.value })}
+                      value={actForm.location}
+                      onChange={e => setActForm({ ...actForm, location: e.target.value })}
                       className="w-full bg-[#0b2545] border border-cyan-500/30 rounded-xl px-4 py-2 text-xs text-white focus:outline-none focus:border-cyan-400"
                     />
                   </div>
@@ -3546,16 +3825,16 @@
                         type="number"
                         min="1"
                         required
-                        value={newActForm.volunteer_spots}
-                        onChange={e => setNewActForm({ ...newActForm, volunteer_spots: e.target.value })}
+                        value={actForm.volunteer_spots}
+                        onChange={e => setActForm({ ...actForm, volunteer_spots: e.target.value })}
                         className="w-full bg-[#0b2545] border border-cyan-500/30 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-400"
                       />
                     </div>
                     <div className="space-y-1">
                       <label className="text-xs font-bold text-slate-300">Tipo de Actividad</label>
                       <select
-                        value={newActForm.activity_type}
-                        onChange={e => setNewActForm({ ...newActForm, activity_type: e.target.value })}
+                        value={actForm.activity_type}
+                        onChange={e => setActForm({ ...actForm, activity_type: e.target.value })}
                         className="w-full bg-[#0b2545] border border-cyan-500/30 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-400"
                       >
                         <option value="Conservación">Conservación</option>
@@ -3570,14 +3849,196 @@
                     type="submit"
                     className="w-full py-3 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-xs uppercase tracking-wider shadow-lg shadow-amber-500/25"
                   >
-                    Guardar Actividad en Calendario
+                    {editingActivity ? 'Guardar Cambios de la Actividad' : 'Guardar Actividad en el Calendario'}
                   </button>
                 </form>
               </div>
             </div>
           )}
 
-          {/* 4. MODAL CAMBIAR ROL DE USUARIO (ADMIN RF09) */}
+          {/* 5. MODAL CREAR O EDITAR PUBLICACIÓN EN EL FORO */}
+          {newPostModalOpen && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
+              <div className="relative w-full max-w-lg bg-[#07192f] border border-cyan-500/40 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+                <button
+                  onClick={() => setNewPostModalOpen(false)}
+                  className="absolute top-4 right-4 text-slate-400 hover:text-white text-lg p-1"
+                >
+                  ✕
+                </button>
+
+                <h3 className="text-xl font-black text-white">
+                  {editingPost ? 'Editar Publicación del Foro' : 'Nueva Publicación en el Foro'}
+                </h3>
+
+                <form onSubmit={handleSavePostSubmit} className="space-y-3.5">
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-slate-300">Categoría</label>
+                    <select
+                      value={postFormCategory}
+                      onChange={e => setPostFormCategory(e.target.value)}
+                      className="w-full bg-[#0b2545] border border-cyan-500/30 rounded-xl px-3 py-2 text-xs text-white focus:outline-none"
+                    >
+                      <option value="Conservación">Conservación</option>
+                      <option value="Investigación Científica">Investigación Científica</option>
+                      <option value="Limpieza">Limpieza de playas</option>
+                      <option value="Educación">Educación y Sensibilización</option>
+                    </select>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-slate-300">Título</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="Título llamativo sobre conservación marina..."
+                      value={postFormTitle}
+                      onChange={e => setPostFormTitle(e.target.value)}
+                      className="w-full bg-[#0b2545] border border-cyan-500/30 rounded-xl px-4 py-2 text-xs text-white focus:outline-none focus:border-cyan-400"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-slate-300">Contenido</label>
+                    <textarea
+                      rows="4"
+                      required
+                      placeholder="Comparte datos científicos, reflexiones o resultados de voluntariado..."
+                      value={postFormContent}
+                      onChange={e => setPostFormContent(e.target.value)}
+                      className="w-full bg-[#0b2545] border border-cyan-500/30 rounded-xl px-4 py-2 text-xs text-white focus:outline-none focus:border-cyan-400"
+                    ></textarea>
+                  </div>
+
+                  <button
+                    type="submit"
+                    className="w-full py-3 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-black text-xs uppercase"
+                  >
+                    {editingPost ? 'Guardar Cambios en la Publicación' : 'Publicar en el Foro'}
+                  </button>
+                </form>
+              </div>
+            </div>
+          )}
+
+          {/* 6. MODAL RESTABLECER CONTRASEÑA DE USUARIO (ADMIN) */}
+          {resetPasswordUser && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
+              <div className="relative w-full max-w-md bg-[#07192f] border border-purple-500/40 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-4">
+                <button
+                  onClick={() => setResetPasswordUser(null)}
+                  className="absolute top-4 right-4 text-slate-400 hover:text-white text-lg p-1"
+                >
+                  ✕
+                </button>
+
+                <div className="text-center space-y-1">
+                  <span className="text-3xl">🔑</span>
+                  <h3 className="text-xl font-black text-white">Restablecer Contraseña</h3>
+                  <p className="text-xs text-slate-400">
+                    Asistiendo a la cuenta de: <strong className="text-cyan-300">{resetPasswordUser.name}</strong> ({resetPasswordUser.email})
+                  </p>
+                </div>
+
+                {resetPasswordError && (
+                  <div className="p-3 rounded-xl bg-red-950/80 border border-red-500/40 text-red-200 text-xs">
+                    {resetPasswordError}
+                  </div>
+                )}
+
+                <form onSubmit={handleSaveResetPassword} className="space-y-3.5">
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-slate-300">Nueva Contraseña</label>
+                    <input
+                      type="password"
+                      required
+                      placeholder="Mínimo 6 caracteres"
+                      value={resetNewPassword}
+                      onChange={e => setResetNewPassword(e.target.value)}
+                      className="w-full bg-[#0b2545] border border-purple-500/30 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-purple-400"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-slate-300">Confirmar Nueva Contraseña</label>
+                    <input
+                      type="password"
+                      required
+                      placeholder="Repite la nueva contraseña"
+                      value={resetConfirmPassword}
+                      onChange={e => setResetConfirmPassword(e.target.value)}
+                      className="w-full bg-[#0b2545] border border-purple-500/30 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-purple-400"
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    className="w-full py-2.5 rounded-xl bg-purple-500 hover:bg-purple-400 text-slate-950 font-black text-xs uppercase"
+                  >
+                    Guardar Nueva Contraseña
+                  </button>
+                </form>
+              </div>
+            </div>
+          )}
+
+          {/* 7. MODAL OTORGAR INSIGNIA OFICIAL (ADMIN) */}
+          {grantBadgeModalOpen && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
+              <div className="relative w-full max-w-md bg-[#07192f] border border-amber-500/40 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-4">
+                <button
+                  onClick={() => setGrantBadgeModalOpen(false)}
+                  className="absolute top-4 right-4 text-slate-400 hover:text-white text-lg p-1"
+                >
+                  ✕
+                </button>
+
+                <div className="text-center space-y-1">
+                  <span className="text-2xl">👑</span>
+                  <h3 className="text-xl font-black text-white">Otorgar Reconocimiento Oficial</h3>
+                  <p className="text-xs text-slate-400">Asigna insignias directamente a usuarios y voluntarios nuevos</p>
+                </div>
+
+                <form onSubmit={handleGrantBadgeSubmit} className="space-y-4">
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-slate-300">Seleccionar Usuario o Voluntario</label>
+                    <select
+                      value={grantVolunteerId}
+                      onChange={e => setGrantVolunteerId(e.target.value)}
+                      required
+                      className="w-full bg-[#0b2545] border border-cyan-500/30 rounded-xl px-3 py-2 text-xs text-white focus:outline-none"
+                    >
+                      <option value="">-- Elige un usuario --</option>
+                      {users.map(u => (
+                        <option key={u.id} value={u.id}>{u.name} ({u.email}) - {u.role}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-slate-300">Seleccionar Insignia</label>
+                    <select
+                      value={grantBadgeId}
+                      onChange={e => setGrantBadgeId(e.target.value)}
+                      className="w-full bg-[#0b2545] border border-cyan-500/30 rounded-xl px-3 py-2 text-xs text-white focus:outline-none"
+                    >
+                      {badges.map(b => (
+                        <option key={b.id} value={b.id}>{b.icon} {b.name} ({b.requirement})</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <button
+                    type="submit"
+                    className="w-full py-3 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-xs uppercase tracking-wider"
+                  >
+                    Otorgar Insignia
+                  </button>
+                </form>
+              </div>
+            </div>
+          )}
+
+          {/* 8. MODAL CAMBIAR ROL (ADMIN) */}
           {changeRoleModalUser && (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
               <div className="relative w-full max-w-md bg-[#07192f] border border-cyan-500/40 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-4">
@@ -3590,7 +4051,7 @@
 
                 <h3 className="text-xl font-black text-white">Cambiar Rol de Usuario</h3>
                 <p className="text-xs text-slate-300">
-                  Modificando permisos para: <strong className="text-cyan-300">{changeRoleModalUser.name}</strong> ({changeRoleModalUser.email})
+                  Modificando permisos para: <strong className="text-cyan-300">{changeRoleModalUser.name}</strong>
                 </p>
 
                 <div className="space-y-1">
@@ -3625,127 +4086,7 @@
             </div>
           )}
 
-          {/* 5. MODAL OTORGAR INSIGNIA OFICIAL (ADMIN) */}
-          {grantBadgeModalOpen && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
-              <div className="relative w-full max-w-md bg-[#07192f] border border-amber-500/40 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-4">
-                <button
-                  onClick={() => setGrantBadgeModalOpen(false)}
-                  className="absolute top-4 right-4 text-slate-400 hover:text-white text-lg p-1"
-                >
-                  ✕
-                </button>
-
-                <div className="text-center space-y-1">
-                  <span className="text-2xl">👑</span>
-                  <h3 className="text-xl font-black text-white">Otorgar Reconocimiento Oficial</h3>
-                  <p className="text-xs text-slate-400">Asigna insignias de honor directamente a voluntarios</p>
-                </div>
-
-                <form onSubmit={handleGrantBadgeSubmit} className="space-y-4">
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-300">Seleccionar Voluntario</label>
-                    <select
-                      value={grantVolunteerId}
-                      onChange={e => setGrantVolunteerId(e.target.value)}
-                      required
-                      className="w-full bg-[#0b2545] border border-cyan-500/30 rounded-xl px-3 py-2 text-xs text-white focus:outline-none"
-                    >
-                      <option value="">-- Elige un voluntario --</option>
-                      {users.filter(u => u.role === 'voluntario').map(v => (
-                        <option key={v.id} value={v.id}>{v.name} ({v.email})</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-300">Seleccionar Insignia</label>
-                    <select
-                      value={grantBadgeId}
-                      onChange={e => setGrantBadgeId(e.target.value)}
-                      className="w-full bg-[#0b2545] border border-cyan-500/30 rounded-xl px-3 py-2 text-xs text-white focus:outline-none"
-                    >
-                      {badges.map(b => (
-                        <option key={b.id} value={b.id}>{b.icon} {b.name} ({b.requirement})</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <button
-                    type="submit"
-                    className="w-full py-3 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-xs uppercase tracking-wider"
-                  >
-                    Otorgar Insignia
-                  </button>
-                </form>
-              </div>
-            </div>
-          )}
-
-          {/* 6. MODAL NUEVA PUBLICACIÓN EN EL FORO */}
-          {newPostModalOpen && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
-              <div className="relative w-full max-w-lg bg-[#07192f] border border-cyan-500/40 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
-                <button
-                  onClick={() => setNewPostModalOpen(false)}
-                  className="absolute top-4 right-4 text-slate-400 hover:text-white text-lg p-1"
-                >
-                  ✕
-                </button>
-
-                <h3 className="text-xl font-black text-white">Nueva Publicación en el Foro</h3>
-
-                <form onSubmit={handleCreatePostSubmit} className="space-y-3.5">
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-300">Categoría</label>
-                    <select
-                      value={newPostCategory}
-                      onChange={e => setNewPostCategory(e.target.value)}
-                      className="w-full bg-[#0b2545] border border-cyan-500/30 rounded-xl px-3 py-2 text-xs text-white focus:outline-none"
-                    >
-                      <option value="Conservación">Conservación</option>
-                      <option value="Investigación Científica">Investigación Científica</option>
-                      <option value="Limpieza">Limpieza de playas</option>
-                      <option value="Educación">Educación y Sensibilización</option>
-                    </select>
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-300">Título</label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="Título llamativo sobre conservación marina..."
-                      value={newPostTitle}
-                      onChange={e => setNewPostTitle(e.target.value)}
-                      className="w-full bg-[#0b2545] border border-cyan-500/30 rounded-xl px-4 py-2 text-xs text-white focus:outline-none focus:border-cyan-400"
-                    />
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-300">Contenido</label>
-                    <textarea
-                      rows="4"
-                      required
-                      placeholder="Comparte datos científicos, reflexiones o resultados de voluntariado..."
-                      value={newPostContent}
-                      onChange={e => setNewPostContent(e.target.value)}
-                      className="w-full bg-[#0b2545] border border-cyan-500/30 rounded-xl px-4 py-2 text-xs text-white focus:outline-none focus:border-cyan-400"
-                    ></textarea>
-                  </div>
-
-                  <button
-                    type="submit"
-                    className="w-full py-3 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-black text-xs uppercase"
-                  >
-                    Publicar en el Foro
-                  </button>
-                </form>
-              </div>
-            </div>
-          )}
-
-          {/* 7. MODAL EDITAR BIOGRAFÍA (EXPERTO RF02) */}
+          {/* 9. MODAL EDITAR BIOGRAFÍA (EXPERTO) */}
           {editBioModalOpen && (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
               <div className="relative w-full max-w-lg bg-[#07192f] border border-cyan-500/40 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-4">
@@ -3775,7 +4116,7 @@
             </div>
           )}
 
-          {/* 8. MODAL AGREGAR PUBLICACIÓN (EXPERTO RF02) */}
+          {/* 10. MODAL AGREGAR PUBLICACIÓN (EXPERTO) */}
           {addPubModalOpen && (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
               <div className="relative w-full max-w-lg bg-[#07192f] border border-purple-500/40 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-4">
@@ -3841,7 +4182,7 @@
             </div>
           )}
 
-          {/* 9. MODAL EDITAR ÁREAS (EXPERTO RF02) */}
+          {/* 11. MODAL EDITAR ÁREAS (EXPERTO) */}
           {editAreasModalOpen && (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
               <div className="relative w-full max-w-md bg-[#07192f] border border-cyan-500/40 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-4">
@@ -3871,7 +4212,7 @@
             </div>
           )}
 
-          {/* 10. MODAL DENUNCIA (CIUDADANO) */}
+          {/* 12. MODAL REGISTRAR DENUNCIA */}
           {reportModalOpen && (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
               <div className="relative w-full max-w-md bg-[#07192f] border border-red-500/40 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-4">
@@ -3902,7 +4243,7 @@
                     />
                   </div>
                   <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-300">Descripción de los Hechos</label>
+                    <label className="text-xs font-bold text-slate-300">Descripción</label>
                     <textarea
                       rows="3"
                       required
@@ -3934,7 +4275,7 @@
             </div>
           )}
 
-          {/* 11. MODAL DONAR */}
+          {/* 13. MODAL DONAR */}
           {donateModalOpen && (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
               <div className="relative w-full max-w-md bg-[#07192f] border border-emerald-500/40 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-4">
@@ -3975,7 +4316,7 @@
             </div>
           )}
 
-          {/* 12. CELEBRACIÓN DE DESBLOQUEO DE INSIGNIA */}
+          {/* 14. CELEBRACIÓN DE DESBLOQUEO DE INSIGNIA */}
           {unlockedBadgeCelebration && (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in zoom-in-95 duration-200">
               <div className="relative w-full max-w-sm bg-gradient-to-b from-[#0b2545] to-[#07192f] border-2 border-amber-400 rounded-3xl p-8 text-center space-y-4 shadow-2xl">
@@ -4002,7 +4343,6 @@
       );
     }
 
-    // Renderizar aplicación React en el DOM
     const rootEl = document.getElementById('root');
     const root = ReactDOM.createRoot(rootEl);
     root.render(<App />);
